@@ -1,0 +1,160 @@
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
+
+
+/* Tezos Command line interface - RPC Calls */
+
+open Client_rpcs
+module Services = Node_rpc_services;
+
+let errors cctxt =
+  call_service0 cctxt Services.Error.service ();
+
+let forge_block cctxt ?net_id ?level ?proto_level ?predecessor ?timestamp fitness ops header =
+  call_service0 cctxt Services.forge_block
+    (net_id, level, proto_level, predecessor, timestamp, fitness, ops, header);
+
+let validate_block cctxt net block =
+  call_err_service0 cctxt Services.validate_block (net, block);
+
+let inject_block cctxt ?(async = false) ?(force = false) raw operations =
+  call_err_service0 cctxt Services.inject_block
+    { raw ; blocking = not async ; force ; operations };
+
+let inject_operation cctxt ?(async = false) ?force operation =
+  call_err_service0 cctxt Services.inject_operation
+    (operation, not async, force);
+
+let inject_protocol cctxt ?(async = false) ?force protocol =
+  call_err_service0 cctxt Services.inject_protocol
+    (protocol, not async, force);
+
+let bootstrapped cctxt =
+  call_streamed_service0 cctxt Services.bootstrapped ();
+
+let complete cctxt ?block prefix =
+  match block with
+  | None ->
+      call_service1 cctxt Services.complete prefix ()
+  | Some block ->
+      call_service2 cctxt Services.Blocks.complete block prefix ();
+
+let describe config ?recurse path =
+  call_describe0 config Services.describe path recurse;
+
+module Blocks = {
+
+  type block = Services.Blocks.block;
+
+  type block_info = Services.Blocks.block_info = {
+    hash: Block_hash.t ;
+    net_id: Net_id.t ;
+    level: Int32.t ;
+    proto_level: int ; (* uint8 *)
+    predecessor: Block_hash.t ;
+    timestamp: Time.t ;
+    operations_hash: Operation_list_list_hash.t ;
+    fitness: MBytes.t list ;
+    data: MBytes.t ;
+    operations: Operation_hash.t list list option ;
+    protocol: Protocol_hash.t ;
+    test_network: Context.test_network;
+  }
+  type preapply_param = Services.Blocks.preapply_param = {
+    operations: Operation_hash.t list ;
+    sort: bool ;
+    timestamp: Time.t option ;
+  }
+  type preapply_result = Services.Blocks.preapply_result = {
+    operations: error Prevalidation.preapply_result ;
+    fitness: MBytes.t list ;
+    timestamp: Time.t ;
+  }
+  let net cctxt h =
+    call_service1 cctxt Services.Blocks.net h ();
+  let level cctxt h =
+    call_service1 cctxt Services.Blocks.level h ();
+  let predecessor cctxt h =
+    call_service1 cctxt Services.Blocks.predecessor h ();
+  let predecessors cctxt h l =
+    call_service1 cctxt Services.Blocks.predecessors h l;
+  let hash cctxt h =
+    call_service1 cctxt Services.Blocks.hash h ();
+  let timestamp cctxt h =
+    call_service1 cctxt Services.Blocks.timestamp h ();
+  let fitness cctxt h =
+    call_service1 cctxt Services.Blocks.fitness h ();
+  let operations cctxt h =
+    call_service1 cctxt Services.Blocks.operations h ();
+  let protocol cctxt h =
+    call_service1 cctxt Services.Blocks.protocol h ();
+  let test_network cctxt h =
+    call_service1 cctxt Services.Blocks.test_network h ();
+
+  let preapply cctxt h ?timestamp ?(sort = false) operations =
+    call_err_service1
+      cctxt Services.Blocks.preapply h
+      { operations ; sort ; timestamp };
+  let pending_operations cctxt block =
+    call_service1 cctxt Services.Blocks.pending_operations block ();
+  let info cctxt ?(include_ops = true) h =
+    call_service1 cctxt Services.Blocks.info h include_ops;
+  let complete cctxt block prefix =
+    call_service2 cctxt Services.Blocks.complete block prefix ();
+  let list cctxt ?(include_ops = false)
+      ?length ?heads ?delay ?min_date ?min_heads () =
+    call_service0 cctxt Services.Blocks.list
+      { include_ops ; length ; heads ; monitor = Some false ; delay ;
+        min_date ; min_heads };
+  let monitor cctxt ?(include_ops = false)
+      ?length ?heads ?delay ?min_date ?min_heads () =
+    call_streamed_service0 cctxt Services.Blocks.list
+      { include_ops ; length ; heads ; monitor = Some true ; delay ;
+        min_date ; min_heads };
+
+};
+
+module Operations = {
+
+  let contents cctxt hashes =
+    call_service1 cctxt Services.Operations.contents hashes ();
+
+  let monitor cctxt ?contents () =
+    call_streamed_service0 cctxt Services.Operations.list
+      { monitor = Some true ; contents };
+
+};
+
+module Protocols = {
+
+  let contents cctxt hash =
+    call_service1 cctxt Services.Protocols.contents hash ();
+
+  let list cctxt ?contents () =
+    call_service0
+      cctxt Services.Protocols.list
+      { contents; monitor = Some false };
+
+};
+
+module Network = {
+
+  let stat cctxt =
+    call_service0 cctxt Services.Network.stat ();
+
+  let connections cctxt =
+    call_service0 cctxt Services.Network.Connection.list ();
+
+  let peers cctxt =
+    call_service0 cctxt Services.Network.Peer_id.list [];
+
+  let points cctxt =
+    call_service0 cctxt Services.Network.Point.list [];
+
+};
