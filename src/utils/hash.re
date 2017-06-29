@@ -1,11 +1,11 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 open Error_monad
 
@@ -27,138 +27,141 @@ let () =
     exit 1
   end
 
-(*-- Signatures -------------------------------------------------------------*)
+/*-- Signatures -------------------------------------------------------------*/
 
-module type MINIMAL_HASH = sig
+module type MINIMAL_HASH = {
 
-  type t
+  type t;
 
-  val name: string
-  val title: string
+  let name: string;
+  let title: string;
 
-  val hash_bytes: MBytes.t list -> t
-  val hash_string: string list -> t
-  val size: int (* in bytes *)
-  val compare: t -> t -> int
-  val equal: t -> t -> bool
+  let hash_bytes: MBytes.t list => t;
+  let hash_string: string list => t;
+  let size: int (* in bytes *);
+  let compare: t => t => int;
+  let equal: t => t => bool;
 
-  val to_hex: t -> string
-  val of_hex: string -> t option
-  val of_hex_exn: string -> t
+  let to_hex: t => string;
+  let of_hex: string => t option;
+  let of_hex_exn: string => t;
 
-  val to_string: t -> string
-  val of_string: string -> t option
-  val of_string_exn: string -> t
+  let to_string: t => string;
+  let of_string: string => t option;
+  let of_string_exn: string => t;
 
-  val to_bytes: t -> MBytes.t
-  val of_bytes: MBytes.t -> t option
-  val of_bytes_exn: MBytes.t -> t
+  let to_bytes: t => MBytes.t;
+  let of_bytes: MBytes.t => t option;
+  let of_bytes_exn: MBytes.t => t;
 
-  val read: MBytes.t -> int -> t
-  val write: MBytes.t -> int -> t -> unit
+  let read: MBytes.t => int => t;
+  let write: MBytes.t => int => t => unit;
 
-  val to_path: t -> string list
-  val of_path: string list -> t option
-  val of_path_exn: string list -> t
+  let to_path: t => string list;
+  let of_path: string list => t option;
+  let of_path_exn: string list => t;
 
-  val prefix_path: string -> string list
-  val path_length: int
+  let prefix_path: string => string list;
+  let path_length: int;
 
-end
+};
 
-module type INTERNAL_MINIMAL_HASH = sig
+module type INTERNAL_MINIMAL_HASH = {
   include MINIMAL_HASH
   module Table : Hashtbl.S with type key = t
-end
+};
 
-module type HASH = sig
+module type HASH = {
 
   include MINIMAL_HASH
 
-  val of_b58check_exn: string -> t
-  val of_b58check_opt: string -> t option
-  val to_b58check: t -> string
-  val to_short_b58check: t -> string
-  val encoding: t Data_encoding.t
-  val pp: Format.formatter -> t -> unit
-  val pp_short: Format.formatter -> t -> unit
-  type Base58.data += Hash of t
-  val b58check_encoding: t Base58.encoding
+  let of_b58check_exn: string => t;
+  let of_b58check_opt: string => t option;
+  let to_b58check: t => string;
+  let to_short_b58check: t => string;
+  let encoding: t Data_encoding.t;
+  let pp: Format.formatter => t => unit;
+  let pp_short: Format.formatter => t => unit;
+  type Base58.data += Hash of t;
+  let b58check_encoding: t Base58.encoding;
 
-  module Set : sig
+  module Set : {
     include Set.S with type elt = t
-    val encoding: t Data_encoding.t
-  end
+    let encoding: t Data_encoding.t
+  };
 
-  module Map : sig
+  module Map : {
     include Map.S with type key = t
-    val encoding: 'a Data_encoding.t -> 'a t Data_encoding.t
-  end
+    let encoding: 'a Data_encoding.t => 'a t Data_encoding.t
+  };
 
-end
+};
 
-module type INTERNAL_HASH = sig
+module type INTERNAL_HASH = {
   include HASH
-  val of_b58check: string -> t tzresult
-  val param:
-    ?name:string ->
-    ?desc:string ->
-    ('a, 'arg, 'ret) Cli_entries.params ->
-    (t -> 'a, 'arg, 'ret) Cli_entries.params
-  module Table : Hashtbl.S with type key = t
-end
+  let of_b58check: string => t tzresult;
+  let param:
+    ?name:string =>
+    ?desc:string =>
+    ('a, 'arg, 'ret) Cli_entries.params =>
+    (t => 'a, 'arg, 'ret) Cli_entries.params;
+  module Table : Hashtbl.S with type key = t;
+};
 
-module type INTERNAL_MERKLE_TREE = sig
-  type elt
+/*Internal Merkle Tree Vriant Data Type*/
+module type INTERNAL_MERKLE_TREE = {
+  type elt;
   include INTERNAL_HASH
-  val compute: elt list -> t
-  val empty: t
+  let compute: elt list => t;
+  let empty: t;
   type path =
-    | Left of path * t
-    | Right of t * path
+    | Left of path * t   /*0*/
+    | Right of t * path  /*1*/
     | Op
-  val compute_path: elt list -> int -> path
-  val check_path: path -> elt -> t * int
-  val path_encoding: path Data_encoding.t
-end
+  let compute_path: elt list => int => path;
+  let check_path: path => elt => t * int;
+  let path_encoding: path Data_encoding.t;
+};
 
-module type MERKLE_TREE = sig
-  type elt
+
+/* Merkle Tree Variant Data Type */
+module type MERKLE_TREE = {
+  type elt;
   include HASH
-  val compute: elt list -> t
-  val empty: t
+  let compute: elt list => t;
+  let empty: t;
   type path =
-    | Left of path * t
-    | Right of t * path
+    | Left of path * t  /*0*/
+    | Right of t * path  /*1*/
     | Op
-  val compute_path: elt list -> int -> path
-  val check_path: path -> elt -> t * int
-  val path_encoding: path Data_encoding.t
-end
+  let compute_path: elt list => int => path;
+  let check_path: path => elt => t * int;
+  let path_encoding: path Data_encoding.t;
+};
 
-module type Name = sig
-  val name: string
-  val title:  string
-  val size: int option
-end
+module type Name = {
+  let name: string;
+  let title:  string;
+  let size: int option;
+};
 
-module type PrefixedName = sig
+module type PrefixedName = {
   include Name
-  val b58check_prefix: string
-end
+  let b58check_prefix: string;
+};
 
-(*-- Type specific Hash builder ---------------------------------------------*)
+/*-- Type specific Hash builder ---------------------------------------------*/
 
-module Make_minimal_Blake2B (K : Name) = struct
+module Make_minimal_Blake2B (K : Name) = {
 
-  type t = Sodium.Generichash.hash
+  type t = Sodium.Generichash.hash;
 
   include K
 
   let size =
-    match K.size with
-    | None -> 32
-    | Some x -> x
+    switch K.size with
+    | None => 32
+    | Some x => x
 
   let of_string s =
     if String.length s <> size then
@@ -167,12 +170,12 @@ module Make_minimal_Blake2B (K : Name) = struct
       Some (Sodium.Generichash.Bytes.to_hash (Bytes.of_string s))
   let of_string_exn s =
     match of_string s with
-    | None ->
+    | None =>
         let msg =
           Printf.sprintf "%s.of_string: wrong string size (%d)"
             K.name (String.length s) in
         raise (Invalid_argument msg)
-    | Some h -> h
+    | Some h => h
   let to_string s = Bytes.to_string (Sodium.Generichash.Bytes.of_hash s)
 
   let of_hex s = of_string (Hex_encode.hex_decode s)
@@ -189,12 +192,12 @@ module Make_minimal_Blake2B (K : Name) = struct
       Some (Sodium.Generichash.Bigbytes.to_hash b)
   let of_bytes_exn b =
     match of_bytes b with
-    | None ->
+    | None =>
         let msg =
           Printf.sprintf "%s.of_bytes: wrong string size (%d)"
             K.name (MBytes.length b) in
         raise (Invalid_argument msg)
-    | Some h -> h
+    | Some h => h
   let to_bytes = Sodium.Generichash.Bigbytes.of_hash
 
   let read src off = of_bytes_exn @@ MBytes.sub src off size
@@ -210,7 +213,7 @@ module Make_minimal_Blake2B (K : Name) = struct
     let open Sodium.Generichash in
     let state = init ~size () in
     List.iter
-      (fun s -> Bytes.update state (BytesLabels.unsafe_of_string s))
+      (fun s => Bytes.update state (BytesLabels.unsafe_of_string s))
       l ;
     final state
 
@@ -251,8 +254,8 @@ module Make_minimal_Blake2B (K : Name) = struct
     and p6 = if len > 10 then String.sub p 10 (len - 10) else "" in
     [ p1 ; p2 ; p3 ; p4 ; p5 ; p6 ]
 
-  module Table = struct
-    include Hashtbl.Make(struct
+  module Table = {
+    include Hashtbl.Make({
       type nonrec t = t
       let hash s =
         Int64.to_int
@@ -260,18 +263,18 @@ module Make_minimal_Blake2B (K : Name) = struct
              (Bytes.unsafe_to_string (Sodium.Generichash.Bytes.of_hash s))
              0)
       let equal = equal
-    end)
-  end
+    })
+  };
 
-end
+};
 
-module Make_Blake2B (R : sig
+module Make_Blake2B (R : {
     val register_encoding:
-      prefix: string ->
-      length:int ->
-      to_raw: ('a -> string) ->
-      of_raw: (string -> 'a option) ->
-      wrap: ('a -> Base58.data) ->
+      prefix: string =>
+      length:int =>
+      to_raw: ('a => string) =>
+      of_raw: (string => 'a option) =>
+      wrap: ('a => Base58.data) =>
       'a Base58.encoding
   end) (K : PrefixedName) = struct
 
@@ -285,19 +288,19 @@ module Make_Blake2B (R : sig
     R.register_encoding
       ~prefix: K.b58check_prefix
       ~length:size
-      ~wrap: (fun s -> Hash s)
-      ~of_raw:(fun h -> of_string h) ~to_raw:to_string
+      ~wrap: (fun s => Hash s)
+      ~of_raw:(fun h => of_string h) ~to_raw:to_string
 
   let of_b58check_opt s =
     Base58.simple_decode b58check_encoding s
   let of_b58check_exn s =
-    match Base58.simple_decode b58check_encoding s with
-    | Some x -> x
-    | None -> Format.kasprintf Pervasives.failwith "Unexpected hash (%s)" K.name
+    switch Base58.simple_decode b58check_encoding s with
+    | Some x => x
+    | None => Format.kasprintf Pervasives.failwith "Unexpected hash (%s)" K.name
   let of_b58check s =
-    match Base58.simple_decode b58check_encoding s with
-    | Some x -> Ok x
-    | None -> generic_error "Unexpected hash (%s)" K.name
+    switch Base58.simple_decode b58check_encoding s with
+    | Some x => Ok x
+    | None => generic_error "Unexpected hash (%s)" K.name
   let to_b58check s = Base58.simple_encode b58check_encoding s
 
   let to_short_b58check s =
@@ -313,7 +316,7 @@ module Make_Blake2B (R : sig
          conv to_b58check (Data_encoding.Json.wrap_error of_b58check_exn) string)
 
   let param ?(name=K.name) ?(desc=K.title) t =
-    Cli_entries.param ~name ~desc (fun _ str -> Lwt.return (of_b58check str)) t
+    Cli_entries.param ~name ~desc (fun _ str => Lwt.return (of_b58check str)) t
 
   let pp ppf t =
     Format.pp_print_string ppf (to_b58check t)
@@ -321,34 +324,34 @@ module Make_Blake2B (R : sig
   let pp_short ppf t =
     Format.pp_print_string ppf (to_short_b58check t)
 
-  module Set = struct
+  module Set = {
     include Set.Make(struct type nonrec t = t let compare = compare end)
     let encoding =
       Data_encoding.conv
         elements
-        (fun l -> List.fold_left (fun m x -> add x m) empty l)
+        (fun l => List.fold_left (fun m x => add x m) empty l)
         Data_encoding.(list encoding)
-  end
+  };
 
-  module Map = struct
+  module Map = {
     include Map.Make(struct type nonrec t = t let compare = compare end)
     let encoding arg_encoding =
       Data_encoding.conv
         bindings
-        (fun l -> List.fold_left (fun m (k,v) -> add k v m) empty l)
+        (fun l => List.fold_left (fun m (k,v) => add k v m) empty l)
         Data_encoding.(list (tup2 encoding arg_encoding))
-  end
+  };
 
-end
+};
 
-module Generic_Merkle_tree (H : sig
-    type t
-    type elt
-    val encoding : t Data_encoding.t
-    val empty : t
-    val leaf : elt -> t
-    val node : t -> t -> t
-  end) = struct
+module Generic_Merkle_tree (H : {
+    type t;
+    type elt;
+    let encoding : t Data_encoding.t;
+    let empty : t;
+    let leaf : elt => t;
+    let node : t => t => t;
+  }) = {
 
   let rec step a n =
     let m = (n+1) / 2 in
@@ -363,19 +366,19 @@ module Generic_Merkle_tree (H : sig
     else begin
       a.(m+1) <- a.(m) ;
       step a (m+1)
-    end
+    };
 
   let empty = H.empty
 
   let compute xs =
     match xs with
-    | [] -> H.empty
-    | [x] -> H.leaf x
-    | _ :: _ :: _ ->
+    | [] => H.empty
+    | [x] => H.leaf x
+    | _ :: _ :: _ =>
         let last = Utils.list_last_exn xs in
         let n = List.length xs in
         let a = Array.make (n+1) (H.leaf last) in
-        List.iteri (fun i x -> a.(i) <- H.leaf x) xs ;
+        List.iteri (fun i x => a.(i) <- H.leaf x) xs ;
         step a n
 
   type path =
@@ -401,24 +404,24 @@ module Generic_Merkle_tree (H : sig
 
   let compute_path xs i =
     match xs with
-    | [] -> invalid_arg "compute_path"
-    | [_] -> Op
-    | _ :: _ :: _ ->
+    | [] => invalid_arg "compute_path"
+    | [_] => Op
+    | _ :: _ :: _ =>
         let last = Utils.list_last_exn xs in
         let n = List.length xs in
         if i < 0 || n <= i then invalid_arg "compute_path" ;
         let a = Array.make (n+1) (H.leaf last) in
-        List.iteri (fun i x -> a.(i) <- H.leaf x) xs ;
+        List.iteri (fun i x => a.(i) <- H.leaf x) xs ;
         step_path a n Op i
 
   let rec check_path p h =
     match p with
-    | Op ->
+    | Op =>
         H.leaf h, 1, 0
-    | Left (p, r) ->
+    | Left (p, r) =>
         let l, s, pos = check_path p h in
         H.node l r, s * 2, pos
-    | Right (l, p) ->
+    | Right (l, p) =>
         let r, s, pos = check_path p h in
         H.node l r, s * 2, pos + s
 
@@ -429,43 +432,43 @@ module Generic_Merkle_tree (H : sig
   let path_encoding =
     let open Data_encoding in
     mu "path"
-      (fun path_encoding ->
+      (fun path_encoding =>
          union [
            case ~tag:240
              (obj2
                 (req "path" path_encoding)
                 (req "right" H.encoding))
-             (function Left (p, r) -> Some (p, r) | _ -> None)
-             (fun (p, r) -> Left (p, r)) ;
+             (function Left (p, r) => Some (p, r) | _ => None)
+             (fun (p, r) => Left (p, r)) ;
            case ~tag:15
              (obj2
                 (req "left" H.encoding)
                 (req "path" path_encoding))
-             (function Right (r, p) -> Some (r, p) | _ -> None)
-             (fun (r, p) -> Right (r, p)) ;
+             (function Right (r, p) => Some (r, p) | _ => None)
+             (fun (r, p) => Right (r, p)) ;
            case ~tag:0
              unit
-             (function Op -> Some () | _ -> None)
-             (fun () -> Op)
+             (function Op => Some () | _ => None)
+             (fun () => Op)
          ])
 
 end
 
 module Make_merkle_tree
-    (R : sig
-       val register_encoding:
-         prefix: string ->
-         length:int ->
-         to_raw: ('a -> string) ->
-         of_raw: (string -> 'a option) ->
-         wrap: ('a -> Base58.data) ->
+    (R : {
+       let register_encoding:
+         prefix: string =>
+         length:int =>
+         to_raw: ('a => string) =>
+         of_raw: (string => 'a option) =>
+         wrap: ('a => Base58.data) =>
          'a Base58.encoding
-     end)
+     )
     (K : PrefixedName)
     (Contents: sig
        type t
-       val to_bytes: t -> MBytes.t
-     end) = struct
+       val to_bytes: t => MBytes.t
+     }) =
 
   include Make_Blake2B (R) (K)
 
@@ -482,131 +485,131 @@ module Make_merkle_tree
       let node x y = hash_bytes [to_bytes x; to_bytes y]
     end)
 
-end
 
-(*-- Pre-instanciated hashes ------------------------------------------------*)
+
+/*-- Pre-instanciated hashes ------------------------------------------------*/
 
 module Block_hash =
-  Make_Blake2B (Base58) (struct
-    let name = "Block_hash"
-    let title = "A Tezos block ID"
-    let b58check_prefix = Base58.Prefix.block_hash
-    let size = None
-  end)
+  Make_Blake2B (Base58) ({
+    let name = "Block_hash";
+    let title = "A Tezos block ID";
+    let b58check_prefix = Base58.Prefix.block_hash;
+    let size = None;
+  })
 
 module Operation_hash =
-  Make_Blake2B (Base58) (struct
-    let name = "Operation_hash"
-    let title = "A Tezos operation ID"
-    let b58check_prefix = Base58.Prefix.operation_hash
-    let size = None
-  end)
+  Make_Blake2B (Base58) ({
+    let name = "Operation_hash";
+    let title = "A Tezos operation ID";
+    let b58check_prefix = Base58.Prefix.operation_hash;
+    let size = None;
+  })
 
 module Operation_list_hash =
-  Make_merkle_tree (Base58) (struct
-    let name = "Operation_list_hash"
-    let title = "A list of operations"
-    let b58check_prefix = Base58.Prefix.operation_list_hash
-    let size = None
-  end) (Operation_hash)
+  Make_merkle_tree (Base58) ({
+    let name = "Operation_list_hash";
+    let title = "A list of operations";
+    let b58check_prefix = Base58.Prefix.operation_list_hash;
+    let size = None;
+  }) (Operation_hash)
 
 module Operation_list_list_hash =
-  Make_merkle_tree (Base58) (struct
-    let name = "Operation_list_list_hash"
-    let title = "A list of list of operations"
-    let b58check_prefix = Base58.Prefix.operation_list_list_hash
-    let size = None
-  end) (Operation_list_hash)
+  Make_merkle_tree (Base58) ({
+    let name = "Operation_list_list_hash";
+    let title = "A list of list of operations";
+    let b58check_prefix = Base58.Prefix.operation_list_list_hash;
+    let size = None;
+  }) (Operation_list_hash)
 
 module Protocol_hash =
-  Make_Blake2B (Base58) (struct
-    let name = "Protocol_hash"
-    let title = "A Tezos protocol ID"
-    let b58check_prefix = Base58.Prefix.protocol_hash
-    let size = None
-  end)
+  Make_Blake2B (Base58) ({
+    let name = "Protocol_hash";
+    let title = "A Tezos protocol ID";
+    let b58check_prefix = Base58.Prefix.protocol_hash;
+    let size = None;
+  })
 
 module Generic_hash =
-  Make_minimal_Blake2B (struct
-    let name = "Generic_hash"
-    let title = ""
-    let size = None
-  end)
+  Make_minimal_Blake2B ({
+    let name = "Generic_hash";
+    let title = "";
+    let size = None;
+  })
 
-module Net_id = struct
+module Net_id = {
 
-  type t = string
-  type net_id = t
+  type t = string;
+  type net_id = t;
 
-  let name = "Net_id"
-  let title = "Network identifier"
+  let name = "Net_id";
+  let title = "Network identifier";
 
-  let size = 4
+  let size = 4;
 
   let of_block_hash bh =
-    MBytes.substring (Block_hash.to_bytes bh) 0 4
+    MBytes.substring (Block_hash.to_bytes bh) 0 4;
 
-  let hash_bytes l = of_block_hash (Block_hash.hash_bytes l)
-  let hash_string l = of_block_hash (Block_hash.hash_string l)
+  let hash_bytes l = of_block_hash (Block_hash.hash_bytes l);
+  let hash_string l = of_block_hash (Block_hash.hash_string l);
 
-  type Base58.data += Hash of t
+  type Base58.data += Hash of t;
 
   let of_string s =
-    if String.length s <> size then None else Some s
+    if String.length s <> size then None else Some s;
   let of_string_exn s =
     match of_string s with
-    | None ->
+    | None =>
         let msg =
           Printf.sprintf "%s.of_string: wrong string size (%d)"
             name (String.length s) in
         raise (Invalid_argument msg)
-    | Some h -> h
-  let to_string s = s
+    | Some h => h
+  let to_string s = s;
 
-  let of_hex s = of_string (Hex_encode.hex_decode s)
-  let of_hex_exn s = of_string_exn (Hex_encode.hex_decode s)
-  let to_hex s = Hex_encode.hex_encode (to_string s)
+  let of_hex s = of_string (Hex_encode.hex_decode s);
+  let of_hex_exn s = of_string_exn (Hex_encode.hex_decode s);
+  let to_hex s = Hex_encode.hex_encode (to_string s);
 
-  let compare = String.compare
-  let equal = String.equal
+  let compare = String.compare;
+  let equal = String.equal;
 
   let of_bytes b =
     if MBytes.length b <> size then
       None
     else
-      Some (MBytes.to_string b)
+      Some (MBytes.to_string b);
   let of_bytes_exn b =
     match of_bytes b with
-    | None ->
+    | None =>
         let msg =
           Printf.sprintf "%s.of_bytes: wrong string size (%d)"
             name (MBytes.length b) in
         raise (Invalid_argument msg)
-    | Some h -> h
-  let to_bytes = MBytes.of_string
+    | Some h => h;
+  let to_bytes = MBytes.of_string;
 
-  let read src off = of_bytes_exn @@ MBytes.sub src off size
-  let write dst off h = MBytes.blit (to_bytes h) 0 dst off size
+  let read src off = of_bytes_exn @@ MBytes.sub src off size;
+  let write dst off h = MBytes.blit (to_bytes h) 0 dst off size;
 
   let b58check_encoding =
     Base58.register_encoding
       ~prefix: Base58.Prefix.net_id
       ~length: size
-      ~wrap: (fun s -> Hash s)
-      ~of_raw:of_string ~to_raw: (fun h -> h)
+      ~wrap: (fun s => Hash s)
+      ~of_raw:of_string ~to_raw: (fun h => h);
 
   let of_b58check_opt s =
-    Base58.simple_decode b58check_encoding s
+    Base58.simple_decode b58check_encoding s;
   let of_b58check_exn s =
     match Base58.simple_decode b58check_encoding s with
-    | Some x -> x
-    | None -> Format.kasprintf Pervasives.failwith "Unexpected hash (%s)" name
+    | Some x => x
+    | None => Format.kasprintf Pervasives.failwith "Unexpected hash (%s)" name;
   let of_b58check s =
     match Base58.simple_decode b58check_encoding s with
-    | Some x -> Ok x
-    | None -> generic_error "Unexpected hash (%s)" name
-  let to_b58check s = Base58.simple_encode b58check_encoding s
-  let to_short_b58check = to_b58check
+    | Some x => Ok x
+    | None => generic_error "Unexpected hash (%s)" name;
+  let to_b58check s = Base58.simple_encode b58check_encoding s;
+  let to_short_b58check = to_b58check;
 
   let encoding =
     let open Data_encoding in
@@ -614,34 +617,34 @@ module Net_id = struct
       ~binary: (Fixed.string size)
       ~json:
         (describe ~title: (title ^ " (Base58Check-encoded Sha256)") @@
-         conv to_b58check (Data_encoding.Json.wrap_error of_b58check_exn) string)
+         conv to_b58check (Data_encoding.Json.wrap_error of_b58check_exn) string);
 
   let param ?(name=name) ?(desc=title) t =
-    Cli_entries.param ~name ~desc (fun _ str -> Lwt.return (of_b58check str)) t
+    Cli_entries.param ~name ~desc (fun _ str => Lwt.return (of_b58check str)) t;
 
   let pp ppf t =
-    Format.pp_print_string ppf (to_b58check t)
+    Format.pp_print_string ppf (to_b58check t);
 
   let pp_short ppf t =
-    Format.pp_print_string ppf (to_short_b58check t)
+    Format.pp_print_string ppf (to_short_b58check t);
 
-  module Set = struct
+  module Set = {
     include Set.Make(struct type nonrec t = t let compare = compare end)
     let encoding =
       Data_encoding.conv
         elements
-        (fun l -> List.fold_left (fun m x -> add x m) empty l)
+        (fun l => List.fold_left (fun m x => add x m) empty l)
         Data_encoding.(list encoding)
-  end
+  };
 
-  module Map = struct
+  module Map = {
     include Map.Make(struct type nonrec t = t let compare = compare end)
     let encoding arg_encoding =
       Data_encoding.conv
         bindings
-        (fun l -> List.fold_left (fun m (k,v) -> add k v m) empty l)
+        (fun l => List.fold_left (fun m (k,v) => add k v m) empty l)
         Data_encoding.(list (tup2 encoding arg_encoding))
-  end
+  };
 
   let fold_read f buf off len init =
     let last = off + len * size in
