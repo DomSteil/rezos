@@ -9,11 +9,11 @@
 
 open Lwt.Infix
 
-module Inttbl = Hashtbl.Make(struct
-    type t = int
-    let equal (x: int) (y: int) = x = y
-    let hash = Hashtbl.hash
-  end)
+module Inttbl = Hashtbl.Make({
+    type t = int;
+    let equal (x: int) (y: int) = x = y;
+    let hash = Hashtbl.hash;
+  })
 
 type t = {
   id: int;
@@ -23,12 +23,12 @@ type t = {
   mutable average: int ;
 }
 
-let counters = Inttbl.create 51
+let counters = Inttbl.create 51;
 
-let updated = Lwt_condition.create ()
+let updated = Lwt_condition.create ();
 
-let update_hook = ref []
-let on_update f = update_hook := f :: !update_hook
+let update_hook = ref [];
+let on_update f = update_hook := f :: !update_hook;
 
 let worker_loop () =
   let prev = ref @@ Mtime.elapsed () in
@@ -55,8 +55,8 @@ let worker =
     Lwt.async begin fun () ->
       let (_cancelation, cancel, _on_cancel) = Lwt_utils.canceler () in
       Lwt_utils.worker "counter" ~run:worker_loop ~cancel
-    end
-  end
+    };
+  };
 
 let create =
   let cpt = ref 0 in

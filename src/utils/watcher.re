@@ -18,18 +18,18 @@ and 'a input =
   { mutable watchers : 'a inner_stopper list;
     mutable cpt : int; }
 
-type stopper = unit -> unit
+type stopper = unit -> unit;
 
 let create_input () =
   { watchers = [];
-    cpt = 0 }
+    cpt = 0 };
 
 let create_fake_stream () =
   let str, push = Lwt_stream.create () in
-  str, (fun () -> push None)
+  str, (fun () -> push None);
 
 let notify input info =
-  List.iter (fun w -> w.push (Some info)) input.watchers
+  List.iter (fun w -> w.push (Some info)) input.watchers;
 
 let shutdown_output output =
   if output.active then begin
@@ -37,7 +37,7 @@ let shutdown_output output =
     output.push None;
     output.input.watchers <-
       List.filter (fun w -> w.id <> output.id) output.input.watchers;
-  end
+  };
 
 let create_stream input =
   input.cpt <- input.cpt + 1;
@@ -47,4 +47,4 @@ let create_stream input =
   input.watchers <- output :: input.watchers;
   stream, (fun () -> shutdown_output output)
 
-let shutdown f = f ()
+let shutdown f = f ();

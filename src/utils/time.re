@@ -10,39 +10,39 @@
 open Error_monad
 open CalendarLib
 
-module T = struct
+module T = {
   include Int64
 
   let diff a b =
-    let sign = a >= b in
-    let res = Int64.sub a b in
-    let res_sign = res >= 0L in
-    if sign = res_sign then res else invalid_arg "Time.diff" ;;
+    let sign = a >= b;
+    let res = Int64.sub a b;
+    let res_sign = res >= 0L;
+    if sign = res_sign then res else invalid_arg "Time.diff" ;
 
   let add a d =
-    let sign = d >= 0L in
-    let res = Int64.add a d in
-    let incr_sign = res >= a in
-    if sign = incr_sign then res else invalid_arg "Time.add" ;;
-
+    let sign = d >= 0L;
+    let res = Int64.add a d;
+    let incr_sign = res >= a;
+    if sign = incr_sign then res else invalid_arg "Time.add" ;
+;
   let hash = to_int
-  let (=) = equal
-  let (<>) x y = compare x y <> 0
-  let (<) x y = compare x y < 0
-  let (<=) x y = compare x y <= 0
-  let (>=) x y = compare x y >= 0
-  let (>) x y = compare x y > 0
-  let min x y = if x <= y then x else y
-  let max x y = if x <= y then y else x
+  let (=) = equal;
+  let (<>) x y = compare x y <> 0;
+  let (<) x y = compare x y < 0;
+  let (<=) x y = compare x y <= 0;
+  let (>=) x y = compare x y >= 0;
+  let (>) x y = compare x y > 0;
+  let min x y = if x <= y then x else y;
+  let max x y = if x <= y then y else x;
 
-  let min_value = min_int
-  let epoch = 0L
-  let max_value = max_int
+  let min_value = min_int;
+  let epoch = 0L;
+  let max_value = max_int;
 
-  let now () = Int64.of_float (Unix.gettimeofday ())
+  let now () = Int64.of_float (Unix.gettimeofday ());
 
-  let of_seconds x = x
-  let to_seconds x = x
+  let of_seconds x = x;
+  let to_seconds x = x;
 
   let formats =
     [ "%Y-%m-%dT%H:%M:%SZ" ; "%Y-%m-%d %H:%M:%SZ";
@@ -115,20 +115,20 @@ module T = struct
   }
 
   let timed_encoding arg_encoding =
-    let open Data_encoding in
+    let open Data_encoding
     conv
       (fun {time; data} -> (time, data))
       (fun (time, data) -> {time; data})
-      (tup2 encoding arg_encoding)
+      (tup2 encoding arg_encoding);
 
   let make_timed data = {
     data ; time = now () ;
-  }
+  };
 
-  let pp_hum ppf t = Format.pp_print_string ppf (to_notation t)
-end
+  let pp_hum ppf t = Format.pp_print_string ppf (to_notation t);
+};
 
-include T
-module Set = Set.Make(T)
-module Map = Map.Make(T)
-module Table = Hashtbl.Make(T)
+include T;
+module Set = Set.Make(T);
+module Map = Map.Make(T);
+module Table = Hashtbl.Make(T);

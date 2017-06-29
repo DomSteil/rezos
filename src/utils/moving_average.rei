@@ -7,18 +7,18 @@
 /*                                                                        */
 /**************************************************************************/
 
-type t
+type t;
 
-val create: init:int -> alpha:float -> t
-val destroy: t -> unit
+let create: init:int => alpha:float => t;
+let destroy: t => unit;
 
-val add: t -> int -> unit
+let add: t => int => unit;
 
-val on_update: (unit -> unit) -> unit
-val updated: unit Lwt_condition.t
+let on_update: (unit => unit) => unit;
+let updated: unit Lwt_condition.t;
 
 type stat = {
   total: int64 ;
   average: int ;
 }
-val stat: t -> stat
+let stat: t => stat;
