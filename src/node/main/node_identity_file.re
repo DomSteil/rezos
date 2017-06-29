@@ -1,16 +1,16 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
-let default_name = "identity.json"
+let default_name = "identity.json";
 
-type error += No_identity_file of string
-type error += Insufficient_proof_of_work of { expected: float }
+type error += No_identity_file of string;
+type error += Insufficient_proof_of_work of { expected: float };
 
 let () =
   register_error_kind

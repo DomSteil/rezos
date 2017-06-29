@@ -1,23 +1,23 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 open P2p_types
 
-let (//) = Filename.concat
+let (//) = Filename.concat;
 
 let home =
   try Sys.getenv "HOME"
-  with Not_found -> "/root"
+  with Not_found -> "/root";
 
-let default_data_dir = home // ".tezos-node"
-let default_net_port = 9732
-let default_rpc_port = 8732
+let default_data_dir = home // ".tezos-node";
+let default_net_port = 9732;
+let default_rpc_port = 8732;
 
 type t = {
   data_dir : string ;

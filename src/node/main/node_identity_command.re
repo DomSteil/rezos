@@ -1,11 +1,11 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 let (//) = Filename.concat
 
@@ -152,4 +152,3 @@ end
 
 let cmd =
   Term.term, Manpage.info
-

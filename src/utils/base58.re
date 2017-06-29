@@ -10,11 +10,11 @@
 open Utils
 open Lwt.Infix
 
-let base = 58
-let zbase = Z.of_int base
+let base = 58;
+let zbase = Z.of_int base;
 
-let log2 x = log x /. log 2.
-let log2_base = log2 (float_of_int base)
+let log2 x = log x /. log 2.;
+let log2_base = log2 (float_of_int base);
 
 
 module Alphabet = {
@@ -36,15 +36,15 @@ module Alphabet = {
     { encode = alphabet ; decode = Bytes.to_string str }
 
   let bitcoin =
-    make "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+    make "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
   let ripple =
-    make "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz"
+    make "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
   let flickr =
-    make "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+    make "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
-  let default = bitcoin
+  let default = bitcoin;
 
-end
+};
 
 let count_trailing_char s c =
   let len = String.length s in
@@ -52,7 +52,7 @@ let count_trailing_char s c =
     if i < 0 then len
     else if String.get s i <> c then (len-i-1)
     else loop (i-1) in
-  loop (len-1)
+  loop (len-1);
 
 let count_leading_char s c =
   let len = String.length s in
@@ -60,7 +60,7 @@ let count_leading_char s c =
     if i = len then len
     else if String.get s i <> c then i
     else loop (i+1) in
-  loop 0
+  loop 0;
 
 let of_char ?(alphabet=Alphabet.default) x =
   let pos = String.get alphabet.decode (int_of_char x) in
@@ -68,7 +68,7 @@ let of_char ?(alphabet=Alphabet.default) x =
   int_of_char pos
 
 let to_char ?(alphabet=Alphabet.default) x =
-  alphabet.encode.[x]
+  alphabet.encode.[x];
 
 let raw_encode ?(alphabet=Alphabet.default) s =
   let len = String.length s in
@@ -279,37 +279,37 @@ include MakeResolvers(struct
 let register_resolver enc f = register_resolver enc (fun () s -> f s)
 let complete ?alphabet s = complete ?alphabet () s
 
-module Make(C: sig type context end) = struct
+module Make(C: sig type context end) = {
   include MakeEncodings(struct let encodings = !encodings end)
   include MakeResolvers(struct
       type context = C.context
       let encodings = encodings
     end)
-end
+};
 
-module Prefix = struct
+module Prefix = {
 
-  (* 32 *)
-  let block_hash = "\001\052" (* B(51) *)
-  let operation_hash = "\005\116" (* o(51) *)
-  let operation_list_hash = "\133\233" (* Lo(52) *)
-  let operation_list_list_hash = "\029\159\109" (* LLo(53) *)
-  let protocol_hash = "\002\170" (* P(51) *)
+  /* 32 */
+  let block_hash = "\001\052" (* B(51) *);
+  let operation_hash = "\005\116" (* o(51) *);
+  let operation_list_hash = "\133\233" (* Lo(52) *);
+  let operation_list_list_hash = "\029\159\109" (* LLo(53) *);
+  let protocol_hash = "\002\170" (* P(51) *);
 
-  (* 20 *)
-  let ed25519_public_key_hash = "\006\161\159" (* tz1(36) *)
+  /* 20 */
+  let ed25519_public_key_hash = "\006\161\159" (* tz1(36) *);
 
-  (* 16 *)
-  let cryptobox_public_key_hash = "\153\103" (* id(30) *)
+  /* 16 */
+  let cryptobox_public_key_hash = "\153\103" (* id(30) *);
 
-  (* 32 *)
-  let ed25519_public_key = "\013\015\037\217" (* edpk(54) *)
+  /* 32 */
+  let ed25519_public_key = "\013\015\037\217" (* edpk(54) *);
 
-  (* 64 *)
-  let ed25519_secret_key = "\043\246\078\007" (* edsk(98) *)
-  let ed25519_signature = "\009\245\205\134\018" (* edsig(99) *)
+  /* 64 */
+  let ed25519_secret_key = "\043\246\078\007" (* edsk(98) *);
+  let ed25519_signature = "\009\245\205\134\018" (* edsig(99) *);
 
-  (* 4 *)
+  /* 4 */
   let net_id = "\087\082\000" (* Net(15) *)
 
-end
+};
