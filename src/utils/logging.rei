@@ -7,46 +7,46 @@
 /*                                                                        */
 /**************************************************************************/
 
-module type LOG = sig
+module type LOG = {
 
-  val debug: ('a, Format.formatter, unit, unit) format4 -> 'a
-  val log_info: ('a, Format.formatter, unit, unit) format4 -> 'a
-  val log_notice: ('a, Format.formatter, unit, unit) format4 -> 'a
-  val warn: ('a, Format.formatter, unit, unit) format4 -> 'a
-  val log_error: ('a, Format.formatter, unit, unit) format4 -> 'a
-  val fatal_error: ('a, Format.formatter, unit, 'b) format4 -> 'a
+  let debug: ('a, Format.formatter, unit, unit) format4 => 'a;
+  let log_info: ('a, Format.formatter, unit, unit) format4 => 'a;
+  let log_notice: ('a, Format.formatter, unit, unit) format4 => 'a;
+  let warn: ('a, Format.formatter, unit, unit) format4 => 'a;
+  let log_error: ('a, Format.formatter, unit, unit) format4 => 'a;
+  let fatal_error: ('a, Format.formatter, unit, 'b) format4 => 'a;
 
-  val lwt_debug: ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-  val lwt_log_info: ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-  val lwt_log_notice: ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-  val lwt_warn: ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-  val lwt_log_error: ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
+  let lwt_debug: ('a, Format.formatter, unit, unit Lwt.t) format4 => 'a;
+  let lwt_log_info: ('a, Format.formatter, unit, unit Lwt.t) format4 => 'a;
+  let lwt_log_notice: ('a, Format.formatter, unit, unit Lwt.t) format4 => 'a;
+  let lwt_warn: ('a, Format.formatter, unit, unit Lwt.t) format4 => 'a;
+  let lwt_log_error: ('a, Format.formatter, unit, unit Lwt.t) format4 => 'a;
 
-end
+};
 
-module Core : LOG
-module Net : LOG
-module RPC : LOG
-module Db : LOG
-module Updater : LOG
-module Node : sig
+module Core : LOG;
+module Net : LOG;
+module RPC : LOG;
+module Db : LOG;
+module Updater : LOG;
+module Node : {
   module State : LOG
   module Validator : LOG
-  module Prevalidator : LOG
+  module Preletidator : LOG
   module Discoverer : LOG
   module Worker : LOG
   module Main : LOG
-end
-module Client : sig
-  module Blocks : LOG
-  module Mining : LOG
-  module Endorsement : LOG
-  module Revelation : LOG
-  module Denunciation : LOG
-end
-module Webclient : LOG
+};
+module Client : {
+  module Blocks : LOG;
+  module Mining : LOG;
+  module Endorsement : LOG;
+  module Revelation : LOG;
+  module Denunciation : LOG;
+};
+module Webclient : LOG;
 
-module Make(S: sig val name: string end) : LOG
+module Make(S: sig let name: string end) : LOG;
 
 type level = Lwt_log_core.level =
   | Debug
@@ -64,12 +64,12 @@ type level = Lwt_log_core.level =
           program. *)
   | Fatal
 
-type template = Lwt_log.template
-val default_template : template
+type template = Lwt_log.template;
+let default_template : template;
 
-val level_encoding : level Data_encoding.t
+let level_encoding : level Data_encoding.t;
 
-module Output : sig
+module Output : {
   type t =
     | Null
     | Stdout
@@ -77,13 +77,13 @@ module Output : sig
     | File of string
     | Syslog of Lwt_log.syslog_facility
 
-  val encoding : t Data_encoding.t
-  val of_string : string -> t option
-  val to_string : t -> string
-  val pp : Format.formatter -> t -> unit
-end
+  let encoding : t Data_encoding.t;
+  let of_string : string => t option;
+  let to_string : t => string;
+  let pp : Format.formatter => t => unit;
+};
 
 
-val init: ?template:template -> Output.t -> unit Lwt.t
+let init: ?template:template => Output.t => unit Lwt.t;
 
-val sections : string list ref
+let sections : string list ref;
