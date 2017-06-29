@@ -20,142 +20,142 @@ open Error_monad
     equipped with functions to use it as is of as keys in the database
     or in memory sets and maps. *)
 
-module type MINIMAL_HASH = sig
+module type MINIMAL_HASH = {
 
-  type t
+  type t;
 
-  val name: string
-  val title: string
+  let name: string;
+  let title: string;
 
-  val hash_bytes: MBytes.t list -> t
-  val hash_string: string list -> t
-  val size: int (* in bytes *)
-  val compare: t -> t -> int
-  val equal: t -> t -> bool
+  let hash_bytes: MBytes.t list -> t;
+  let hash_string: string list -> t;
+  let size: int (* in bytes *);
+  let compare: t -> t -> int;
+  let equal: t -> t -> bool;
 
-  val to_hex: t -> string
-  val of_hex: string -> t option
-  val of_hex_exn: string -> t
+  let to_hex: t -> string;
+  let of_hex: string -> t option;
+  let of_hex_exn: string -> t;
 
-  val to_string: t -> string
-  val of_string: string -> t option
-  val of_string_exn: string -> t
+  let to_string: t -> string;
+  let of_string: string -> t option;
+  let of_string_exn: string -> t;
 
-  val to_bytes: t -> MBytes.t
-  val of_bytes: MBytes.t -> t option
-  val of_bytes_exn: MBytes.t -> t
+  let to_bytes: t -> MBytes.t;
+  let of_bytes: MBytes.t -> t option;
+  let of_bytes_exn: MBytes.t -> t;
 
-  val read: MBytes.t -> int -> t
-  val write: MBytes.t -> int -> t -> unit
+  let read: MBytes.t -> int -> t;
+  let write: MBytes.t -> int -> t -> unit;
 
-  val to_path: t -> string list
-  val of_path: string list -> t option
-  val of_path_exn: string list -> t
+  let to_path: t -> string list;
+  let of_path: string list -> t option;
+  let of_path_exn: string list -> t;
 
-  val prefix_path: string -> string list
-  val path_length: int
+  let prefix_path: string -> string list;
+  let path_length: int;
 
-end
+};
 
-module type INTERNAL_MINIMAL_HASH = sig
+module type INTERNAL_MINIMAL_HASH = {
   include MINIMAL_HASH
   module Table : Hashtbl.S with type key = t
-end
+};
 
-module type HASH = sig
+module type HASH = {
 
   include MINIMAL_HASH
 
-  val of_b58check_exn: string -> t
-  val of_b58check_opt: string -> t option
-  val to_b58check: t -> string
-  val to_short_b58check: t -> string
-  val encoding: t Data_encoding.t
-  val pp: Format.formatter -> t -> unit
-  val pp_short: Format.formatter -> t -> unit
-  type Base58.data += Hash of t
-  val b58check_encoding: t Base58.encoding
+  let of_b58check_exn: string -> t;
+  let of_b58check_opt: string -> t option;
+  let to_b58check: t -> string;
+  let to_short_b58check: t -> string;
+  let encoding: t Data_encoding.t;
+  let pp: Format.formatter -> t -> unit;
+  let pp_short: Format.formatter -> t -> unit;
+  type Base58.data += Hash of t;
+  let b58check_encoding: t Base58.encoding;
 
-  module Set : sig
+  module Set : {
     include Set.S with type elt = t
-    val encoding: t Data_encoding.t
-  end
+    let encoding: t Data_encoding.t;
+  };
 
-  module Map : sig
+  module Map : {
     include Map.S with type key = t
-    val encoding: 'a Data_encoding.t -> 'a t Data_encoding.t
-  end
+    let encoding: 'a Data_encoding.t -> 'a t Data_encoding.t;
+  };
 
-end
+};
 
-module type INTERNAL_HASH = sig
+module type INTERNAL_HASH = {
   include HASH
-  val of_b58check: string -> t tzresult
-  val param:
+  let of_b58check: string -> t tzresult;
+  let param:
     ?name:string ->
     ?desc:string ->
     ('a, 'arg, 'ret) Cli_entries.params ->
     (t -> 'a, 'arg, 'ret) Cli_entries.params
   module Table : Hashtbl.S with type key = t
-end
+};
 
-module type INTERNAL_MERKLE_TREE = sig
-  type elt
+module type INTERNAL_MERKLE_TREE = {
+  type elt;
   include INTERNAL_HASH
-  val compute: elt list -> t
-  val empty: t
+  let compute: elt list -> t;
+  let empty: t;
   type path =
     | Left of path * t
     | Right of t * path
     | Op
-  val compute_path: elt list -> int -> path
-  val check_path: path -> elt -> t * int
-  val path_encoding: path Data_encoding.t
-end
+  let compute_path: elt list -> int -> path;
+  let check_path: path -> elt -> t * int;
+  let path_encoding: path Data_encoding.t;
+};
 
-module type MERKLE_TREE = sig
-  type elt
+module type MERKLE_TREE = {
+  type elt;
   include HASH
-  val compute: elt list -> t
-  val empty: t
+  let compute: elt list -> t;
+  let empty: t;
   type path =
     | Left of path * t
     | Right of t * path
     | Op
-  val compute_path: elt list -> int -> path
-  val check_path: path -> elt -> t * int
-  val path_encoding: path Data_encoding.t
-end
+  let compute_path: elt list -> int -> path;
+  let check_path: path -> elt -> t * int;
+  let path_encoding: path Data_encoding.t;
+};
 
-(** {2 Building Hashes} *******************************************************)
+/** {2 Building Hashes} *******************************************************/
 
-(** The parameters for creating a new Hash type using
+/** The parameters for creating a new Hash type using
     {!Make_Blake2B}. Both {!name} and {!title} are only informative,
-    used in error messages and serializers. *)
+    used in error messages and serializers. */
 
-module type Name = sig
-  val name : string
-  val title : string
-  val size : int option
-end
+module type Name = {
+  let name : string;
+  let title : string;
+  let size : int option;
+};
 
-module type PrefixedName = sig
+module type PrefixedName = {
   include Name
-  val b58check_prefix : string
-end
+  let b58check_prefix : string;
+};
 
-(** Builds a new Hash type using Sha256. *)
+/** Builds a new Hash type using Sha256. */
 module Make_minimal_Blake2B (Name : Name) : INTERNAL_MINIMAL_HASH
 module Make_Blake2B
-    (Register : sig
-       val register_encoding:
+    (Register : {
+       let register_encoding:
          prefix: string ->
          length: int ->
          to_raw: ('a -> string) ->
          of_raw: (string -> 'a option) ->
          wrap: ('a -> Base58.data) ->
          'a Base58.encoding
-     end)
+     })
     (Name : PrefixedName) : INTERNAL_HASH
 
 (** {2 Predefined Hashes } ****************************************************)
@@ -176,10 +176,10 @@ module Operation_list_list_hash :
 (** Protocol versions / source hashes. *)
 module Protocol_hash : INTERNAL_HASH
 
-module Net_id : sig
+module Net_id : {
   include INTERNAL_HASH
-  val of_block_hash: Block_hash.t -> t
-end
+  let of_block_hash: Block_hash.t -> t
+};
 
 module Generic_hash : INTERNAL_MINIMAL_HASH
 
@@ -188,16 +188,16 @@ module Generic_hash : INTERNAL_MINIMAL_HASH
 module Generic_Merkle_tree (H : sig
     type t
     type elt
-    val encoding : t Data_encoding.t
-    val empty : t
-    val leaf : elt -> t
-    val node : t -> t -> t
+    let encoding : t Data_encoding.t
+    let empty : t
+    let leaf : elt -> t
+    let node : t -> t -> t
   end) : sig
-  val compute : H.elt list -> H.t
+  let compute : H.elt list -> H.t
   type path =
     | Left of path * H.t
     | Right of H.t * path
     | Op
-  val compute_path: H.elt list -> int -> path
-  val check_path: path -> H.elt -> H.t * int
+  let compute_path: H.elt list -> int -> path
+  let check_path: path -> H.elt -> H.t * int
 end
