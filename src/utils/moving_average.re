@@ -33,18 +33,18 @@ let on_update f = update_hook := f :: !update_hook;
 let worker_loop () =
   let prev = ref @@ Mtime.elapsed () in
   let rec inner sleep =
-    sleep >>= fun () ->
+    sleep >>= fun () =>
     let sleep = Lwt_unix.sleep 1. in
     let now = Mtime.elapsed () in
     let elapsed = int_of_float (Mtime.(to_ms now -. to_ms !prev)) in
     prev := now;
     Inttbl.iter
-      (fun _ c ->
+      (fun _ c =>
          c.average <-
            (c.alpha * c.current) / elapsed + (1000 - c.alpha) * c.average / 1000;
          c.current <- 0)
       counters ;
-    List.iter (fun f -> f ()) !update_hook ;
+    List.iter (fun f => f ()) !update_hook ;
     Lwt_condition.broadcast updated () ;
     inner sleep
   in
@@ -52,7 +52,7 @@ let worker_loop () =
 
 let worker =
   lazy begin
-    Lwt.async begin fun () ->
+    Lwt.async begin fun () =>
       let (_cancelation, cancel, _on_cancel) = Lwt_utils.canceler () in
       Lwt_utils.worker "counter" ~run:worker_loop ~cancel
     };
@@ -60,7 +60,7 @@ let worker =
 
 let create =
   let cpt = ref 0 in
-  fun ~init ~alpha ->
+  fun ~init ~alpha =>
     Lazy.force worker ;
     let id = !cpt in
     incr cpt ;
@@ -72,7 +72,7 @@ let create =
 
 let add c x =
   c.total <- Int64.(add c.total (of_int x)) ;
-  c.current <- c.current + x
+  c.current <- c.current + x;
 
 let destroy c =
   Inttbl.remove counters c.id

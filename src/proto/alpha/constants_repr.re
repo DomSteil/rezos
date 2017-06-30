@@ -1,37 +1,37 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
-let version_number = "\000"
+let version_number = "\000";
 
-let max_operation_data_length = 16 * 1024
-let max_number_of_operations = 200
-let proof_of_work_nonce_size = 8
-let nonce_length = 32
+let max_operation_data_length = 16 * 1024;
+let max_number_of_operations = 200;
+let proof_of_work_nonce_size = 8;
+let nonce_length = 32;
 
 let roll_value =
-  Tez_repr.of_cents_exn 10000_00L
+  Tez_repr.of_cents_exn 10000_00L;
 let seed_nonce_revelation_tip =
-  Tez_repr.of_cents_exn 10_00L
+  Tez_repr.of_cents_exn 10_00L;
 let origination_burn =
-  Tez_repr.of_cents_exn 1_00L
+  Tez_repr.of_cents_exn 1_00L;
 let minimal_contract_balance =
-  Tez_repr.of_cents_exn 1_00L
+  Tez_repr.of_cents_exn 1_00L;
 let mining_bond_cost =
-  Tez_repr.of_cents_exn 1000_00L
+  Tez_repr.of_cents_exn 1000_00L;
 let endorsement_bond_cost =
-  Tez_repr.of_cents_exn 1000_00L
+  Tez_repr.of_cents_exn 1000_00L;
 let mining_reward =
-  Tez_repr.of_cents_exn 150_00L
+  Tez_repr.of_cents_exn 150_00L;
 let endorsement_reward =
-  Tez_repr.of_cents_exn 150_00L
+  Tez_repr.of_cents_exn 150_00L;
 let faucet_credit =
-  Tez_repr.of_cents_exn 100_000_00L
+  Tez_repr.of_cents_exn 100_000_00L;
 
 type constants = {
   cycle_length: int32 ;

@@ -94,15 +94,14 @@ let raw_decode ?(alphabet=Alphabet.default) s =
   let len = String.length s in
   let rec loop res i =
     if i = len then res else
-    let x = Z.of_int (of_char ~alphabet (String.get s i)) in
-    let res = Z.(add x (mul res zbase)) in
-    loop res (i+1)
-  in
-  let res = Z.to_bits @@ loop Z.zero zeros in
-  let res_tzeros = count_trailing_char res '\000' in
-  let len = String.length res - res_tzeros in
-  String.make zeros '\000' ^
-  String.init len (fun i -> String.get res (len - i - 1))
+    let x = Z.of_int (of_char ~alphabet (String.get s i));
+    let res = Z.(add x (mul res zbase));
+    loop res (i+1);
+  let res = Z.to_bits @@ loop Z.zero zeros;
+  let res_tzeros = count_trailing_char res '\000';
+  let len = String.length res - res_tzeros;
+  String.make zeros '\000' ^;
+  String.init len (fun i -> String.get res (len - i - 1));
 
 let checksum s =
   let hash =
