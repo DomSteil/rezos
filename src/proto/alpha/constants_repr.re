@@ -47,7 +47,7 @@ type constants = {
 }
 
 let read_public_key s =
-  Ed25519.Public_key.of_bytes (Bytes.of_string (Hex_encode.hex_decode s))
+  Ed25519.Public_key.of_bytes (Bytes.of_string (Hex_encode.hex_decode s));
 
 let default = {
   cycle_length = 2048l ;
@@ -76,19 +76,19 @@ let default = {
       "4d5373455738070434f214826d301a1c206780d7f789fcbf94c2149b2e0718cc";
 }
 
-let opt (=) def v = if def = v then None else Some v
-let unopt def = function None -> def | Some v -> v
+let opt (=) def v = if def = v then None else Some v;
+let unopt def = function None => def | Some v => v;
 
 let map_option f = function
-  | None -> None
-  | Some x -> Some (f x)
+  | None => None
+  | Some x => Some (f x);
 
 let constants_encoding =
   (* let open Data_encoding in *)
   Data_encoding.conv
-    (fun c ->
-       let module Compare_slot_durations = Compare.List (Period_repr) in
-       let module Compare_keys = Compare.List (Ed25519.Public_key) in
+    (fun c =>
+       let module Compare_slot_durations = Compare.List (Period_repr);
+       let module Compare_keys = Compare.List (Ed25519.Public_key);
        let cycle_length =
          opt Compare.Int32.(=)
            default.cycle_length c.cycle_length
@@ -140,7 +140,7 @@ let constants_encoding =
             instructions_per_transaction,
             proof_of_work_threshold,
             bootstrap_keys,
-            dictator_pubkey), ()) ->
+            dictator_pubkey), ()) =>
       { cycle_length =
           unopt default.cycle_length cycle_length ;
         voting_period_length =
@@ -181,10 +181,10 @@ let constants_encoding =
 
 type error += Constant_read of exn
 
-let read = function
-  | None ->
+let read = fun
+  | None =>
       return default
-  | Some json ->
+  | Some json =>
       match Data_encoding.Json.(destruct constants_encoding json) with
-      | exception exn -> fail (Constant_read exn)
-      | c -> return c
+      | exception exn => fail (Constant_read exn)
+      | c => return c

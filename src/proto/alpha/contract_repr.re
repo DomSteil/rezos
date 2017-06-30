@@ -1,41 +1,41 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 open Tezos_hash
 
 type t =
   | Default of Ed25519.Public_key_hash.t
-  | Originated of Contract_hash.t
-type contract = t
+  | Originated of Contract_hash.t;
+type contract = t;
 
-type error += Invalid_contract_notation of string (* `Permanent *)
+type error += Invalid_contract_notation of string (* `Permanent *);
 
-let to_b58check = function
-  | Default pbk -> Ed25519.Public_key_hash.to_b58check pbk
-  | Originated h -> Contract_hash.to_b58check h
+let to_b58check = fun
+  | Default pbk => Ed25519.Public_key_hash.to_b58check pbk
+  | Originated h => Contract_hash.to_b58check h
 
 let of_b58check s =
   match Base58.decode s with
-  | Some (Ed25519.Public_key_hash.Hash h) -> ok (Default h)
-  | Some (Contract_hash.Hash h) -> ok (Originated h)
-  | _ -> error (Invalid_contract_notation s)
+  | Some (Ed25519.Public_key_hash.Hash h) => ok (Default h)
+  | Some (Contract_hash.Hash h) => ok (Originated h)
+  | _ => error (Invalid_contract_notation s)
 
-let pp ppf = function
-  | Default pbk -> Ed25519.Public_key_hash.pp ppf pbk
-  | Originated h -> Contract_hash.pp ppf h
+let pp ppf = fun
+  | Default pbk => Ed25519.Public_key_hash.pp ppf pbk
+  | Originated h => Contract_hash.pp ppf h
 
-let pp_short ppf = function
-  | Default pbk -> Ed25519.Public_key_hash.pp_short ppf pbk
-  | Originated h -> Contract_hash.pp_short ppf h
+let pp_short ppf = fun
+  | Default pbk => Ed25519.Public_key_hash.pp_short ppf pbk
+  | Originated h => Contract_hash.pp_short ppf h
 
 let encoding =
-  let open Data_encoding in
+  let open Data_encoding
   describe
     ~title:
       "A contract handle"
@@ -47,19 +47,19 @@ let encoding =
     ~binary:
       (union ~tag_size:`Uint8 [
           case ~tag:0 Ed25519.Public_key_hash.encoding
-            (function Default k -> Some k | _ -> None)
-            (fun k -> Default k) ;
+            (function Default k => Some k | _ => None)
+            (fun k => Default k) ;
           case ~tag:1 Contract_hash.encoding
-            (function Originated k -> Some k | _ -> None)
-            (fun k -> Originated k) ;
+            (function Originated k => Some k | _ => None)
+            (fun k => Originated k) ;
         ])
     ~json:
       (conv
          to_b58check
-         (fun s ->
+         (fun s =>
             match of_b58check s with
-            | Ok s -> s
-            | Error _ -> Json.cannot_destruct "Invalid contract notation.")
+            | Ok s => s
+            | Error _ => Json.cannot_destruct "Invalid contract notation.")
          string)
 
 let () =
@@ -68,18 +68,18 @@ let () =
     `Permanent
     ~id:"contract.invalid_contract_notation"
     ~title: "Invalid contract notation"
-    ~pp: (fun ppf x -> Format.fprintf ppf "Invalid contract notation %S" x)
+    ~pp: (fun ppf x => Format.fprintf ppf "Invalid contract notation %S" x)
     ~description:
       "A malformed contract notation was given to an RPC or in a script."
     (obj1 (req "notation" string))
-    (function Invalid_contract_notation loc -> Some loc | _ -> None)
-    (fun loc -> Invalid_contract_notation loc)
+    (function Invalid_contract_notation loc => Some loc | _ => None)
+    (fun loc => Invalid_contract_notation loc)
 
 let default_contract id = Default id
 
 let is_default = function
-  | Default m -> Some m
-  | Originated _ -> None
+  | Default m => Some m
+  | Originated _ => None
 
 type origination_nonce =
   { operation_hash: Operation_hash.t ;
@@ -88,9 +88,9 @@ type origination_nonce =
 let origination_nonce_encoding =
   let open Data_encoding in
   conv
-    (fun { operation_hash ; origination_index } ->
+    (fun { operation_hash ; origination_index } =>
        (operation_hash, origination_index))
-    (fun (operation_hash, origination_index) ->
+    (fun (operation_hash, origination_index) =>
        { operation_hash ; origination_index }) @@
   obj2
     (req "operation" Operation_hash.encoding)
@@ -123,8 +123,8 @@ let arg =
   let construct = to_b58check in
   let destruct hash =
     match of_b58check hash with
-    | Error _ -> Error "Cannot parse contract id"
-    | Ok contract -> Ok contract in
+    | Error _ => Error "Cannot parse contract id"
+    | Ok contract => Ok contract in
   RPC.Arg.make
     ~descr: "A contract identifier encoded in b58check."
     ~name: "contract_id"
@@ -134,12 +134,12 @@ let arg =
 
 let compare l1 l2 =
   match l1, l2 with
-  | Default pkh1, Default pkh2 ->
+  | Default pkh1, Default pkh2 =>
       Ed25519.Public_key_hash.compare pkh1 pkh2
-  | Originated h1, Originated h2 ->
+  | Originated h1, Originated h2 =>
       Contract_hash.compare h1 h2
-  | Default _, Originated _ -> -1
-  | Originated _, Default _ -> 1
+  | Default _, Originated _ => -1
+  | Originated _, Default _ => 1
 let (=) l1 l2 = Compare.Int.(=) (compare l1 l2) 0
 let (<>) l1 l2 = Compare.Int.(<>) (compare l1 l2) 0
 let (>) l1 l2 = Compare.Int.(>) (compare l1 l2) 0
