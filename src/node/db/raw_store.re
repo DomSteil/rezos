@@ -23,7 +23,7 @@ let init path =
   try
     return (LevelDB.open_db path)
   with exn ->
-    Lwt.return (error_exn exn)
+    Lwt.return (error_exn exn);
 
 let close t = LevelDB.close t;
 
@@ -85,8 +85,8 @@ let list_equal l1 l2 len =
     | _, h1 :: t1, h2 :: t2 =>
         if h1 <> h2 then false
         else inner t1 t2 (pred len)
-  in
-  inner l1 l2 len
+
+  inner l1 l2 len;
 
 let is_child ~parent ~child =
   let plen = List.length parent;
@@ -101,7 +101,7 @@ let list_sub l pos len =
     | h :: t =>
         if n = 0 then List.rev acc
         else inner (h :: acc, pred n) t in
-  inner ([], len) l
+  inner ([], len) l;
 
 let fold t k ~init ~f =
   let k_concat = concat k;
@@ -131,7 +131,7 @@ let fold t k ~init ~f =
                 (f (`Dir dir) acc) >>= inner
               end
             end ;
-  in
+  
   inner init
 
 let fold_keys s k ~init ~f =

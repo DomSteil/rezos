@@ -13,8 +13,8 @@ type t;
 type global_store = t;
 
 /** Open or initialize a store at a given path. */
-let init: string -> t tzresult Lwt.t;
-let close : t -> unit;
+let init: string => t tzresult Lwt.t;
+let close : t => unit;
 
 
 /** {2 Net store} ************************************************************/
@@ -33,7 +33,7 @@ module Net : {
 
   module Genesis_time : SINGLE_STORE
     with type t := store
-     and type value := Time.t
+     and type value := Time.t;
 
   module Genesis_protocol : SINGLE_STORE
     with type t := store
@@ -59,7 +59,7 @@ module Net : {
 module Chain : {
 
   type store;
-  let get: Net.store -> store;
+  let get: Net.store => store;
 
   module Current_head : SINGLE_STORE
     with type t := store

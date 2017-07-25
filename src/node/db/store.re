@@ -19,47 +19,47 @@ type global_store = t;
 module Net = {
 
   type store = global_store * Net_id.t
-  let get s id = (s, id)
+  let get s id = (s, id);
 
   module Indexed_store =
     Store_helpers.Make_indexed_substore
       (Store_helpers.Make_substore(Raw_store)(struct let name = ["net"] end))
-      (Net_id)
+      (Net_id);
 
-  let destroy = Indexed_store.remove_all
+  let destroy = Indexed_store.remove_all;
   let list t =
     Indexed_store.fold_indexes t ~init:[]
-      ~f:(fun h acc -> Lwt.return (h :: acc))
+      ~f:(fun h acc -> Lwt.return (h :: acc));
 
   module Genesis_hash =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       (struct let name = ["genesis" ; "hash"] end)
-      (Store_helpers.Make_value(Block_hash))
+      (Store_helpers.Make_value(Block_hash));
 
   module Genesis_time =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       (struct let name = ["genesis" ; "time"] end)
-      (Store_helpers.Make_value(Time))
+      (Store_helpers.Make_value(Time));
 
   module Genesis_protocol =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       (struct let name = ["genesis" ; "protocol"] end)
-      (Store_helpers.Make_value(Protocol_hash))
+      (Store_helpers.Make_value(Protocol_hash));
 
   module Genesis_test_protocol =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       (struct let name = ["genesis" ; "test_protocol"] end)
-      (Store_helpers.Make_value(Protocol_hash))
+      (Store_helpers.Make_value(Protocol_hash));
 
   module Expiration =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       (struct let name = ["expiration"] end)
-      (Store_helpers.Make_value(Time))
+      (Store_helpers.Make_value(Time));
 
   module Allow_forked_network =
     Indexed_store.Make_set (struct let name = ["allow_forked_network"] end)
@@ -81,8 +81,8 @@ module type DATA_STORE = {
 
   let encoding: value Data_encoding.t;
 
-  let compare: value => value -> int;
-  let equal: value => value -> bool;
+  let compare: value => value => int;
+  let equal: value => value => bool;
 
   let hash: value => key;
   let hash_raw: MBytes.t => key;
@@ -90,29 +90,29 @@ module type DATA_STORE = {
   module Discovery_time : MAP_STORE
     with type t := store
      and type key := key
-     and type value := Time.t
+     and type value := Time.t;
 
   module Contents : SINGLE_STORE
     with type t = store * key
-     and type value := value
+     and type value := value;
 
   module RawContents : SINGLE_STORE
     with type t = store * key
-     and type value := MBytes.t
+     and type value := MBytes.t;
 
   module Validation_time : SINGLE_STORE
     with type t = store * key
-     and type value := Time.t
+     and type value := Time.t;
 
   module Errors : MAP_STORE
     with type t := store
      and type key := key
-     and type value = error list
+     and type value = error list;
 
   module Pending : BUFFERED_SET_STORE
     with type t = store
      and type elt := key
-     and type Set.t = key_set
+     and type Set.t = key_set;
 
 };
 
@@ -142,37 +142,37 @@ module Make_data_store
   module Indexed_store =
     Store_helpers.Make_indexed_substore
       (Store_helpers.Make_substore (S) (struct let name = ["data"] }))
-      (I)
+      (I);
 
   module Discovery_time =
     Indexed_store.Make_map
       ({ let name = ["discovery_time"] })
-      (Store_helpers.Make_value(Time))
+      (Store_helpers.Make_value(Time));
   module Contents =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       ({ let name = ["contents"] })
-      (V)
+      (V);
   module RawContents =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       ({ let name = ["contents"] })
-      (Raw_value)
+      (Raw_value);
   module Errors =
     Store_helpers.Make_map
       (Store_helpers.Make_substore (S) ({ let name = ["invalids"] }))
       (I)
-      (Errors_value)
+      (Errors_value);
   module Pending =
     Store_helpers.Make_buffered_set
       (Store_helpers.Make_substore (S) ({ let name = ["pending"] }))
       (I)
-      (Set)
+      (Set);
   module Validation_time =
     Store_helpers.Make_single_store
       (Indexed_store.Store)
       ({ let name = ["validation_time"] })
-      (Store_helpers.Make_value(Time))
+      (Store_helpers.Make_value(Time));
 
 };
 
@@ -188,7 +188,7 @@ module Operation = {
   }
 
   let shell_header_encoding =
-    let open Data_encoding in
+    let open Data_encoding;
     conv
       (fun { net_id } => net_id);
       (fun net_id => { net_id });
@@ -200,7 +200,7 @@ module Operation = {
       proto: MBytes.t ;
     }
     let encoding =
-      let open Data_encoding in
+      let open Data_encoding;
       conv
         (fun { shell ; proto } -> (shell, proto));
         (fun (shell, proto) -> { shell ; proto });
@@ -238,10 +238,7 @@ module Operation = {
         ~f:begin fun net acc ->
           Indexed_store.resolve_index (s, net) pstr >>= fun l ->
           Lwt.return (List.rev_append l acc)
-        end
-    end
 
-end
 
 
 /**************************************************************************
@@ -261,7 +258,7 @@ module Block_header = {
   }
 
   let shell_header_encoding =
-    let open Data_encoding in
+    let open Data_encoding;
     conv
       (fun { net_id ; level ; proto_level ; predecessor ;
              timestamp ; operations_hash ; fitness } ->
@@ -286,7 +283,7 @@ module Block_header = {
       proto: MBytes.t ;
     }
     let encoding =
-      let open Data_encoding in
+      let open Data_encoding;
       conv
         (fun { shell ; proto } -> (shell, proto))
         (fun (shell, proto) -> { shell ; proto })
@@ -298,7 +295,7 @@ module Block_header = {
   include Encoding
 
   let compare b1 b2 =
-    let (>>) x y = if x = 0 then y () else x in
+    let (>>) x y = if x = 0 then y () else x;
     let rec list compare xs ys =
       match xs, ys with
       | [], [] -> 0
@@ -313,12 +310,12 @@ module Block_header = {
     Time.compare b1.shell.timestamp b2.shell.timestamp >> fun () ->
     list compare b1.shell.fitness b2.shell.fitness
 
-  let equal b1 b2 = compare b1 b2 = 0
-  let hash block = Block_hash.hash_bytes [Value.to_bytes block]
-  let hash_raw bytes = Block_hash.hash_bytes [bytes]
+  let equal b1 b2 = compare b1 b2 = 0;
+  let hash block = Block_hash.hash_bytes [Value.to_bytes block];
+  let hash_raw bytes = Block_hash.hash_bytes [bytes];
 
-  type store = Net.store
-  let get x = x
+  type store = Net.store;
+  let get x = x;
 
   include Make_data_store
       (Store_helpers.Make_substore
@@ -326,7 +323,7 @@ module Block_header = {
          (struct let name = ["blocks"] end))
       (Block_hash)
       (Value)
-      (Block_hash.Set)
+      (Block_hash.Set);
 
   module Operation_list_count =
     Store_helpers.Make_single_store
@@ -335,14 +332,14 @@ module Block_header = {
       (Store_helpers.Make_value(struct
          type t = int
          let encoding = Data_encoding.int8
-       end))
+       end));
 
   module Operations_index =
     Store_helpers.Make_indexed_substore
       (Store_helpers.Make_substore
          (Indexed_store.Store)
          (struct let name = ["operations"] end))
-      (Store_helpers.Integer_index)
+      (Store_helpers.Integer_index);
 
   module Operation_list =
     Operations_index.Make_map
@@ -358,7 +355,7 @@ module Block_header = {
       (Store_helpers.Make_value({
          type t = Operation_list_list_hash.path
          let encoding = Operation_list_list_hash.path_encoding
-       }))
+       }));
 
   let register s =
     Base58.register_resolver Block_hash.b58check_encoding begin fun str ->
@@ -388,13 +385,13 @@ module Chain = {
          (Net.Indexed_store.Store)
          ({ let name = ["known_heads"] }))
       (Block_hash)
-      (Block_hash.Set)
+      (Block_hash.Set);
 
   module Current_head =
     Store_helpers.Make_single_store
       (Net.Indexed_store.Store)
       ({ let name = ["current_head"] })
-      (Store_helpers.Make_value(Block_hash))
+      (Store_helpers.Make_value(Block_hash));
 
   module Valid_successors =
     Store_helpers.Make_buffered_set
@@ -402,7 +399,7 @@ module Chain = {
          (Block_header.Indexed_store.Store)
          ({ let name = ["known_successors" ; "valid" ] }))
       (Block_hash)
-      (Block_hash.Set)
+      (Block_hash.Set);
 
   module Invalid_successors =
     Store_helpers.Make_buffered_set
@@ -410,13 +407,13 @@ module Chain = {
          (Block_header.Indexed_store.Store)
          ({ let name = ["known_successors" ; "invalid"] }))
       (Block_hash)
-      (Block_hash.Set)
+      (Block_hash.Set);
 
   module Successor_in_chain =
     Store_helpers.Make_single_store
       (Block_header.Indexed_store.Store)
       ({ let name = ["successor_in_chain"] })
-      (Store_helpers.Make_value(Block_hash))
+      (Store_helpers.Make_value(Block_hash));
 
   module In_chain_insertion_time =
     Store_helpers.Make_single_store
@@ -434,10 +431,10 @@ module Chain = {
 module Protocol = {
 
   include Tezos_compiler.Protocol
-  let hash_raw bytes = Protocol_hash.hash_bytes [bytes]
+  let hash_raw bytes = Protocol_hash.hash_bytes [bytes];
 
-  type store = global_store
-  let get x = x
+  type store = global_store;
+  let get x = x;
 
   include Make_data_store
       (Store_helpers.Make_substore
@@ -445,11 +442,11 @@ module Protocol = {
          ({ let name = ["protocols"] }))
       (Protocol_hash)
       (Store_helpers.Make_value(Tezos_compiler.Protocol))
-      (Protocol_hash.Set)
+      (Protocol_hash.Set);
 
   let register s =
     Base58.register_resolver Protocol_hash.b58check_encoding begin fun str ->
-      let pstr = Protocol_hash.prefix_path str in
+      let pstr = Protocol_hash.prefix_path str;
       Indexed_store.resolve_index s pstr
     };
 
@@ -457,7 +454,7 @@ module Protocol = {
 };
 
 let init dir =
-  Raw_store.init dir >>=? fun s ->
+  Raw_store.init dir >>=? fun s =>
   Block_header.register s ;
   Operation.register s ;
   Protocol.register s ;

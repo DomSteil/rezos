@@ -45,7 +45,7 @@ module type KEY = {
 };
 
 /** A KEY instance for using raw implementation paths as keys */
-module RawKey : KEY with type t = key
+module RawKey : KEY with type t = key;
 
 module type BYTES_STORE = {
   type t;
@@ -59,7 +59,7 @@ module type BYTES_STORE = {
 };
 
 module MakeBytesStore (S : STORE) (K : KEY) :
-  BYTES_STORE with type t = S.t and type key = K.t
+  BYTES_STORE with type t = S.t and type key = K.t;
 
 /** {2 Typed Store Overlays} *************************************************/
 
@@ -72,7 +72,7 @@ module type VALUE = {
 };
 
 /** A VALUE instance for using the raw bytes values */
-module RawValue : VALUE with type t = value
+module RawValue : VALUE with type t = value;
 
 /** Signature of a typed store as returned by {!MakeTypedStore} */
 module type TYPED_STORE = {
@@ -89,13 +89,11 @@ module type TYPED_STORE = {
     keys of a given type). The view is also restricted to a prefix,
     (which can be empty). For all primitives to work as expected, all
     keys under this prefix must be homogeneously typed. */
+
 module MakeTypedStore (S : STORE) (K : KEY) (C : VALUE) :
-  TYPED_STORE with type t = S.t and type key = K.t and type value = C.t
+  TYPED_STORE with type t = S.t and type key = K.t and type value = C.t;
 
 
-/* {2 Persistent Sets} ******************************************************/
-
-/** Signature of a set as returned by {!MakePersistentSet} */
 module type PERSISTENT_SET = {
   type t and key;
   let mem : t => key => bool Lwt.t;
@@ -120,7 +118,7 @@ module type BUFFERED_PERSISTENT_SET = {
     membership. For this to work, the prefix passed must be reserved
     for the set (every key under it is considered a member). */
 module MakePersistentSet (S : STORE) (K : KEY)
-  : PERSISTENT_SET with type t := S.t and type key := K.t
+  : PERSISTENT_SET with type t := S.t and type key := K.t;
 
 /* Same as {!MakePersistentSet} but also provides a way to use an
     OCaml set as an explicitly synchronized in-memory buffer. */
@@ -129,7 +127,7 @@ module MakeBufferedPersistentSet
   : BUFFERED_PERSISTENT_SET
     with type t := S.t
      and type key := K.t
-     and module Set := Set
+     and module Set := Set;
 
 module type PERSISTENT_MAP = {
   type t and key and value;
@@ -156,7 +154,7 @@ module type BUFFERED_PERSISTENT_MAP = {
     considered the key of a binding). */
 module MakePersistentMap (S : STORE) (K : KEY) (C : VALUE)
   : PERSISTENT_MAP
-    with type t := S.t and type key := K.t and type value := C.t
+    with type t := S.t and type key := K.t and type value := C.t;
 
 
 module MakeBufferedPersistentMap
@@ -165,14 +163,14 @@ module MakeBufferedPersistentMap
    with type t := S.t
     and type key := K.t
     and type value := C.t
-    and module Map := Map
+    and module Map := Map;
 
 
 /** {2 Predefined Instances} *************************************************/
 
 module MakePersistentBytesMap (S : STORE) (K : KEY)
   : PERSISTENT_MAP
-  with type t := S.t and type key := K.t and type value := MBytes.t
+  with type t := S.t and type key := K.t and type value := MBytes.t;
 
 module MakeBufferedPersistentBytesMap
     (S : STORE) (K : KEY) (Map : Map.S with type key = K.t)
@@ -180,7 +178,7 @@ module MakeBufferedPersistentBytesMap
     with type t := S.t
      and type key := K.t
      and type value := MBytes.t
-     and module Map := Map
+     and module Map := Map;
 
 module type TYPED_VALUE_REPR = {
   type value;
@@ -189,7 +187,7 @@ module type TYPED_VALUE_REPR = {
 
 module MakePersistentTypedMap (S : STORE) (K : KEY) (T : TYPED_VALUE_REPR)
   : PERSISTENT_MAP
-    with type t := S.t and type key := K.t and type value := T.value
+    with type t := S.t and type key := K.t and type value := T.value;
 
 module MakeBufferedPersistentTypedMap
     (S : STORE) (K : KEY) (T : TYPED_VALUE_REPR) (Map : Map.S with type key = K.t)
@@ -197,7 +195,7 @@ module MakeBufferedPersistentTypedMap
     with type t := S.t
      and type key := K.t
      and type value := T.value
-     and module Map := Map
+     and module Map := Map;
 
 module MakeHashResolver
     (Store : {

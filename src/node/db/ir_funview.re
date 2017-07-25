@@ -50,8 +50,8 @@ module type NODE = {
     let is_empty: t => bool;
     let cons: step => t => t;
     let rcons: t => step => t;
-    let decons: t => (step * t) option;
-    let rdecons: t => (t * step) option;
+    let decons: t => (step , t) option;
+    let rdecons: t => (t , step) option;
     let map: t => (step => 'a) => 'a list;
     module Step: Hum with type t = step
   };
@@ -97,7 +97,7 @@ module Ir_misc = {
   };
   /* assume l1 and l2 are key-sorted */
   let alist_iter2 compare_k f l1 l2 =
-    let rec aux l1 l2 = match l1, l2 with
+    let rec aux l1 l2 = match l1, l2
       | [], t => List.iter (fun (key, v) => f key (`Right v)) t
       | t, [] => List.iter (fun (key, v) => f key (`Left v)) t
       | (k1,v1)::t1, (k2,v2)::t2 =>
@@ -112,7 +112,7 @@ module Ir_misc = {
                 f k2 (`Right v2);
                 aux l1 t2
               )
-    in
+
     aux l1 l2
   module Map_ext (M: Map.S) (K: Tc.S0 with type t = M.key) = {
 
@@ -148,17 +148,16 @@ module Ir_misc = {
           (fun b => b >>= fun () => return_unit) (List.rev !m3)
 
       let merge f m1 m2 =
-        let l3 = ref [] in
+        let l3 = ref []
         let f key data =
           f key data >>= function
           | None   => return_unit
           | Some v => l3 := (key, v) :: !l3; return_unit
-        in
+
         iter2 f m1 m2 >>= fun () =>
         let m3 = of_alist !l3 in
         return m3
 
-    end
 
     include Tc.As_AL1(struct
         type 'a r = 'a t
@@ -167,10 +166,9 @@ module Ir_misc = {
         let of_alist = of_alist
         let to_alist = to_alist
       end)
-  end
   module Map (S: Tc.S0) = Map_ext (Map.Make(S))(S)
 
-end
+
 
 module Make (S: Irmin.S) = struct
 
@@ -228,7 +226,6 @@ module Make (S: Irmin.S) = struct
         P.Contents.Val.equal x y
       | _ => false
 
-  end
 
   module Node = struct
 
@@ -277,34 +274,34 @@ module Make (S: Irmin.S) = struct
         ) (StepMap.empty, StepMap.empty) alist
 
     let create_node contents succ =
-      let alist = mk_alist contents succ in
+      let alist = mk_alist contents succ;
       { contents; succ; alist }
 
     let create contents succ =
-      { key = None ; node = Some (create_node contents succ) }
+      { key = None ; node = Some (create_node contents succ) };
 
     let key db k =
-      { key = Some (db, k) ; node = None }
+      { key = Some (db, k) ; node = None };
 
     let both db k v =
-      { key = Some (db, k) ; node = Some v }
+      { key = Some (db, k) ; node = Some v };
 
-    let empty () = create StepMap.empty StepMap.empty
+    let empty () = create StepMap.empty StepMap.empty;
 
     let import t n =
-      let alist = P.Node.Val.alist n in
+      let alist = P.Node.Val.alist n;
       let alist = List.map (fun (l, x) =>
           match x with
           | `Contents (c, _meta) => (l, `Contents (Contents.key t c))
           | `Node n     => (l, `Node (key t n))
-        ) alist in
-      let contents, succ = mk_index alist in
+        ) alist
+      let contents, succ = mk_index alist;
       create_node contents succ
 
     let export n =
       match n.key with
       | Some (_, k) => k
-      | None => Pervasives.failwith "Node.export"
+      | None => Pervasives.failwith "Node.export";
 
     let export_node n =
       let alist = List.map (fun (l, x) =>
@@ -313,7 +310,7 @@ module Make (S: Irmin.S) = struct
                                           P.Node.Val.Metadata.default))
           | `Node n     => (l, `Node (export n))
         ) (Lazy.force n.alist)
-      in
+
       P.Node.Val.create alist
 
     let read t =
@@ -329,24 +326,24 @@ module Make (S: Irmin.S) = struct
           Lwt.return (Some n)
 
     let is_empty t =
-      read t >>= function
+      read t >>= fun
       | None   => Lwt.return false
-      | Some n => Lwt.return (Lazy.force n.alist = [])
+      | Some n => Lwt.return (Lazy.force n.alist = []);
 
     let steps t =
-      read t >>= function
+      read t >>= fun
       | None    => Lwt.return_nil
-      | Some  n =>
-        let steps = ref StepSet.empty in
+      | Some  n =>;
+        let steps = ref StepSet.empty;
         List.iter
           (fun (l, _) => steps := StepSet.add l !steps)
           (Lazy.force n.alist);
         Lwt.return (StepSet.to_list !steps)
 
     let read_contents t step =
-      read t >>= function
+      read t >>= fun
       | None   => Lwt.return_none
-      | Some t =>
+      | Some t =>;
         try
           StepMap.find step t.contents
           |> Contents.read
@@ -358,14 +355,14 @@ module Make (S: Irmin.S) = struct
       with Not_found => None
 
     let with_contents t step contents =
-      read t >>= function
+      read t >>= fun
       | None => begin
           match contents with
           | None   => Lwt.return_none
           | Some c =>
               let contents = StepMap.singleton step (Contents.create c) in
               Lwt.return (Some (create contents StepMap.empty))
-        end
+
       | Some n => begin
           match contents with
           | None =>
@@ -384,17 +381,17 @@ module Make (S: Irmin.S) = struct
                 let contents =
                   StepMap.add step (Contents.create c) n.contents in
                 Lwt.return (Some (create contents n.succ))
-        end
+
 
     let with_succ t step succ =
-      read t >>= function
+      read t >>= fun
       | None => begin
           match succ with
           | None   => Lwt.return_none
           | Some c =>
-              let succ = StepMap.singleton step c in
+              let succ = StepMap.singleton step c;
               Lwt.return (Some (create StepMap.empty succ))
-        end
+
       | Some n => begin
           match succ with
           | None =>
@@ -409,16 +406,15 @@ module Make (S: Irmin.S) = struct
                 if c != previous then raise Not_found;
                 Lwt.return_none
               with Not_found =>
-                let succ = StepMap.add step c n.succ in
-                Lwt.return (Some (create n.contents succ))
-        end
+                let succ = StepMap.add step c n.succ;
+                Lwt.return (Some (create n.contents succ));
 
-  end
 
-  type key = Path.t
-  type value = Node.contents
 
-  type t = [`Empty | `Node of Node.t | `Contents of Node.contents]
+  type key = Path.t;
+  type value = Node.contents;
+
+  type t = [`Empty | `Node of Node.t | `Contents of Node.contents];
 
   module CO = Tc.Option(P.Contents.Val)
   module PL = Tc.List(Path)
@@ -436,7 +432,7 @@ module Make (S: Irmin.S) = struct
           match Node.read_succ t h with
           | None   => Lwt.return_none
           | Some v => aux v p
-    in
+
     match t with
     | `Empty      => Lwt.return_none
     | `Node n     => aux n path
@@ -451,29 +447,29 @@ module Make (S: Irmin.S) = struct
       | None   => Lwt.return_none
       | Some n => Node.read_contents n file
 
-  let read t k = read_contents t k
+  let read t k = read_contents t k;
 
   let err_not_found n k =
     Printf.ksprintf
-      invalid_arg "Irmin.View.%s: %s not found" n (Path.to_hum k)
+      invalid_arg "Irmin.View.%s: %s not found" n (Path.to_hum k);
 
   let read_exn t k =
     read t k >>= function
     | None   => err_not_found "read" k
-    | Some v => Lwt.return v
+    | Some v => Lwt.return v;
 
   let mem t k =
     read t k >>= function
     | None  => Lwt.return false
-    | _     => Lwt.return true
+    | _     => Lwt.return true;
 
   let dir_mem t k =
     sub t k >>= function
     | Some _ => Lwt.return true
-    | None => Lwt.return false
+    | None => Lwt.return false;
 
   let list_aux t path =
-    sub t path >>= function
+    sub t path >>= fun
     | None   => Lwt.return []
     | Some n =>
       Node.steps n >>= fun steps =>
@@ -481,14 +477,14 @@ module Make (S: Irmin.S) = struct
         List.fold_left (fun set p =>
             PathSet.add (Path.rcons path p) set
           ) PathSet.empty steps
-      in
+
       Lwt.return (PathSet.to_list paths)
 
   let list t path =
-    list_aux t path
+    list_aux t path;
 
   let iter t fn =
-    let rec aux = function
+    let rec aux = fun
       | []       => Lwt.return_unit
       | path::tl =>
         list t path >>= fun childs =>
@@ -499,7 +495,7 @@ module Make (S: Irmin.S) = struct
           else fn path (fun () => read_exn t path)
         end >>= fun () =>
         aux todo
-    in
+
     list t Path.empty >>= aux
 
   let update_contents_aux t k v =
@@ -510,7 +506,7 @@ module Make (S: Irmin.S) = struct
         | `Contents c, Some v when P.Contents.Val.equal c v => Lwt.return t
         | _, None => Lwt.return `Empty
         | _, Some c => Lwt.return (`Contents c)
-      end
+
     | Some (path, file) =>
       let rec aux view path =
         match Path.decons path with
@@ -542,22 +538,22 @@ module Make (S: Irmin.S) = struct
               else
                 aux (Node.empty ()) p >>= function
                 | None => assert false
-                | Some _ as child => Node.with_succ view h child
-      in
-      let n = match t with `Node n => n | _ => Node.empty () in
-      aux n path >>= function
+                | Some _ as child => Node.with_succ view h child;
+
+      let n = match t with `Node n => n | _ => Node.empty ();
+      aux n path >>= fun
       | None => Lwt.return t
       | Some node =>
         Node.is_empty node >>= function
         | true  => Lwt.return `Empty
-        | false => Lwt.return (`Node node)
+        | false => Lwt.return (`Node node);
 
   let update_contents t k v =
-    update_contents_aux t k v
+    update_contents_aux t k v;
 
-  let update t k v = update_contents t k (Some v)
+  let update t k v = update_contents t k (Some v);
 
-  let remove t k = update_contents t k None
+  let remove t k = update_contents t k None;
 
   let remove_rec t k =
     match Path.decons k with
@@ -574,14 +570,14 @@ module Make (S: Irmin.S) = struct
             if Path.is_empty p then
               Node.with_succ view h None
             else
-              Node.read view >>= function
+              Node.read view >>= fun
               | None   => Lwt.return_none
               | Some n =>
                 match Node.read_succ n h with
                 | None       =>
                       Lwt.return_none
                 | Some child =>
-                    aux child p >>= function
+                    aux child p >>= fun
                     | None => Lwt.return_none
                     | Some child => begin
                         (* remove empty dirs *)
@@ -590,26 +586,26 @@ module Make (S: Irmin.S) = struct
                         | false => Lwt.return (Some child)
                       end >>= fun child =>
                         Node.with_succ view h child
-        in
-        aux n k >>= function
+
+        aux n k >>= fun
       | None => Lwt.return t
       | Some node =>
-        Node.is_empty node >>= function
+        Node.is_empty node >>= fun
         | true  => Lwt.return `Empty
         | false => Lwt.return (`Node node)
 
   type db = S.t
 
   let import db key =
-    let repo = S.repo db in
-    begin P.Node.read (P.Repo.node_t repo) key >|= function
+    let repo = S.repo db;
+    begin P.Node.read (P.Repo.node_t repo) key >|= fun
     | None   => `Empty
-    | Some n => `Node (Node.both repo key (Node.import repo n))
-    end
+    | Some n => `Node (Node.both repo key (Node.import repo n));
+
 
   let export repo t =
-    let node n = P.Node.add (P.Repo.node_t repo) (Node.export_node n) in
-    let todo = Stack.create () in
+    let node n = P.Node.add (P.Repo.node_t repo) (Node.export_node n)
+    let todo = Stack.create ();
     let rec add_to_todo n =
       match n with
       | { Node.key = Some _ ; _ } => ()

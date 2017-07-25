@@ -127,23 +127,23 @@ module type INDEXED_STORE = {
 
   module Make_set (N : NAME)
     : SET_STORE with type t = t
-                 and type elt = key
+                 and type elt = key;
 
   module Make_buffered_set (N : NAME) (Set : Set.S with type elt = key)
     : BUFFERED_SET_STORE with type t = t
                           and type elt = key
-                          and module Set = Set
+                          and module Set = Set;
 
   module Make_map (N : NAME) (V : VALUE)
     : MAP_STORE with type t = t
                  and type key = key
-                 and type value = V.t
+                 and type value = V.t;
 
   module Make_buffered_map
       (N : NAME) (V : VALUE) (Map : Map.S with type key = key)
     : BUFFERED_MAP_STORE with type t = t
                           and type key = key
                           and type value = V.t
-                          and module Map = Map
+                          and module Map = Map;
 
 };

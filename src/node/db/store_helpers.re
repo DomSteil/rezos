@@ -40,9 +40,9 @@ module Make_single_store (S : STORE) (N : NAME) (V : VALUE) = {
   let remove t = S.remove t N.name
 };
 
-let map_key f = function
+let map_key f = fun
   |`Key k => `Key (f k)
-  | `Dir k => `Dir (f k)
+  | `Dir k => `Dir (f k);
 
 module Make_substore (S : STORE) (N : NAME)
   : STORE with type t = S.t = {

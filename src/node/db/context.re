@@ -69,16 +69,16 @@ module GitStore = {
 };
 
 type index = {
-  path: string ;
-  repo: GitStore.Repo.t ;
-  patch_context: context => context Lwt.t ;
-  mutable commits: int ;
-  repack_scheduler : Lwt_utils.Idle_waiter.t ;
+  path: string,
+  repo: GitStore.Repo.t,
+  patch_context: context => context Lwt.t,
+  mutable commits: int,
+  repack_scheduler : Lwt_utils.Idle_waiter.t
 }
 and context = {
-  index: index ;
-  store: GitStore.t ;
-  view: GitStore.FunView.v ;
+  index: index,
+  store: GitStore.t,
+  view: GitStore.FunView.v
 }
 type t = context;
 
