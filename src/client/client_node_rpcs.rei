@@ -103,19 +103,19 @@ module Blocks : {
     (error Prevalidation.preapply_result * Operation_hash.Set.t) tzresult Lwt.t;
 
   type block_info = {
-    hash: Block_hash.t ;
-    net_id: Net_id.t ;
-    level: Int32.t ;
-    proto_level: int ; (* uint8 *)
-    predecessor: Block_hash.t ;
-    timestamp: Time.t ;
-    operations_hash: Operation_list_list_hash.t ;
-    fitness: MBytes.t list ;
-    data: MBytes.t ;
-    operations: Operation_hash.t list list option ;
-    protocol: Protocol_hash.t ;
-    test_network: Context.test_network;
-  }
+    hash: Block_hash.t,
+    net_id: Net_id.t,
+    level: Int32.t,
+    proto_level: int, /* uint8 */
+    predecessor: Block_hash.t,
+    timestamp: Time.t,
+    operations_hash: Operation_list_list_hash.t,
+    fitness: MBytes.t list,
+    data: MBytes.t,
+    operations: Operation_hash.t list list option,
+    protocol: Protocol_hash.t,
+    test_network: Context.test_network,
+  };
 
   let info:
     config =>
@@ -134,10 +134,10 @@ module Blocks : {
     unit => block_info list list tzresult Lwt_stream.t tzresult Lwt.t;
 
   type preapply_result = {
-    operations: error Prevalidation.preapply_result ;
-    fitness: MBytes.t list ;
-    timestamp: Time.t ;
-  }
+    operations: error Prevalidation.preapply_result,
+    fitness: MBytes.t list,
+    timestamp: Time.t,
+  };
 
   let preapply:
     config =>
@@ -181,16 +181,16 @@ let bootstrapped:
 module Network : {
 
   let stat:
-    config => P2p_types.Stat.t tzresult Lwt.t
+    config => P2p_types.Stat.t tzresult Lwt.t;
 
   let connections:
-    config => P2p_types.Connection_info.t list tzresult Lwt.t
+    config => P2p_types.Connection_info.t list tzresult Lwt.t;
 
   let peers:
-    config => (P2p.Peer_id.t * P2p.RPC.Peer_id.info) list tzresult Lwt.t
+    config => (P2p.Peer_id.t * P2p.RPC.Peer_id.info) list tzresult Lwt.t;
 
   let points:
-    config => (P2p.Point.t * P2p.RPC.Point.info) list tzresult Lwt.t
+    config => (P2p.Point.t * P2p.RPC.Point.info) list tzresult Lwt.t;
 
 };
 

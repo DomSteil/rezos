@@ -46,89 +46,89 @@ let split delim ?(dup = true) ?(limit = max_int) path =
 
 let split_path path = split '/' path
 
-let map_option ~f = function
-  | None -> None
-  | Some x -> Some (f x)
+let map_option ~f = fun
+  | None => None
+  | Some x => Some (f x);
 
-let apply_option ~f = function
-  | None -> None
-  | Some x -> f x
+let apply_option ~f = fun
+  | None => None
+  | Some x => f x;
 
-let iter_option ~f = function
-  | None -> ()
-  | Some x -> f x
+let iter_option ~f = fun
+  | None => ()
+  | Some x => f x
 
-let unopt ~default = function
-  | None -> default
-  | Some x -> x
+let unopt ~default = fun
+  | None => default
+  | Some x => x;
 
-let unopt_map ~f ~default = function
-  | None -> default
-  | Some x -> f x
+let unopt_map ~f ~default = fun
+  | None => default
+  | Some x => f x;
 
-let may_cons xs x = match x with None -> xs | Some x -> x :: xs
+let may_cons xs x = match x with None => xs | Some x => x :: xs;
 
 let unopt_list l =
-  List.rev @@ List.fold_left may_cons [] l
+  List.rev @@ List.fold_left may_cons [] l;
 
 let first_some a b = match a, b with
-  | None, None -> None
-  | None, Some v -> Some v
-  | Some v, _ -> Some v
+  | None, None => None
+  | None, Some v => Some v
+  | Some v, _ => Some v;
 
 let filter_map f l =
-  List.rev @@ List.fold_left (fun acc x -> may_cons acc (f x)) [] l
+  List.rev @@ List.fold_left (fun acc x => may_cons acc (f x)) [] l;
 
 let list_rev_sub l n =
-  ListLabels.fold_left l ~init:(n, []) ~f:begin fun (n, l) elt ->
-    if n <= 0 then (n, l) else (n - 1, elt :: l)
+  ListLabels.fold_left l ~init:(n, []) ~f:begin fun (n, l) elt =>
+    if n <= 0 then (n, l) else (n - 1, elt :: l);
   end |> snd
 
-let list_sub l n = list_rev_sub l n |> List.rev
+let list_sub l n = list_rev_sub l n |> List.rev;
 
-let list_hd_opt = function
-  | [] -> None
-  | h :: _ -> Some h
+let list_hd_opt = fun
+  | [] => None
+  | h :: _ => Some h;
 
-let rec list_last_exn = function
-  | [] -> raise Not_found
-  | [x] -> x
-  | _ :: xs -> list_last_exn xs
+let rec list_last_exn = fun
+  | [] => raise Not_found
+  | [x] => x
+  | _ :: xs => list_last_exn xs;
 
 let merge_filter_list2
     ?(finalize = List.rev) ?(compare = compare)
     ?(f = first_some)
     l1 l2 =
-  let sort = List.sort compare in
-  let rec merge_aux acc = function
-    | [], [] -> finalize acc
-    | r1, [] -> finalize acc @ (filter_map (fun x1 -> f (Some x1) None) r1)
-    | [], r2 -> finalize acc @ (filter_map (fun x2 -> f None (Some x2)) r2)
-    | ((h1 :: t1) as r1), ((h2 :: t2) as r2) ->
+  let sort = List.sort compare;
+  let rec merge_aux acc = fun
+    | [], [] => finalize acc
+    | r1, [] => finalize acc @ (filter_map (fun x1 => f (Some x1) None) r1)
+    | [], r2 => finalize acc @ (filter_map (fun x2 => f None (Some x2)) r2)
+    | ((h1 :: t1) as r1), ((h2 :: t2) as r2) =>
       if compare h1 h2 > 0 then
         merge_aux (may_cons acc (f None (Some h2))) (r1, t2)
       else if compare h1 h2 < 0 then
         merge_aux (may_cons acc (f (Some h1) None)) (t1, r2)
       else (* m1 = m2 *)
         merge_aux (may_cons acc (f (Some h1) (Some h2))) (t1, t2)
-  in
+
   merge_aux [] (sort l1, sort l2)
 
-let merge_list2 ?finalize ?compare ?(f = fun x1 _x1 -> x1) l1 l2 =
+let merge_list2 ?finalize ?compare ?(f = fun x1 _x1 => x1) l1 l2 =
   merge_filter_list2 ?finalize ?compare
-    ~f:(fun x1 x2 -> match x1, x2 with
-        | None, None -> assert false
-        | Some x1, None -> Some x1
-        | None, Some x2 -> Some x2
-        | Some x1, Some x2 -> Some (f x1 x2))
+    ~f:(fun x1 x2 => match x1, x2 with
+        | None, None => assert false
+        | Some x1, None => Some x1
+        | None, Some x2 => Some x2
+        | Some x1, Some x2 => Some (f x1 x2))
     l1 l2
 
 let display_paragraph ppf description =
   Format.fprintf ppf "@[%a@]"
     (Format.pp_print_list ~pp_sep:Format.pp_print_newline
-       (fun ppf line ->
+       (fun ppf line =>
           Format.pp_print_list ~pp_sep:Format.pp_print_space
-            (fun ppf w ->
+            (fun ppf w =>
                (* replace &nbsp; by real spaces... *)
                Format.fprintf ppf "%s@ "
                  (Stringext.replace_all ~pattern:"\xC2\xA0" ~with_:" " w))
@@ -136,72 +136,72 @@ let display_paragraph ppf description =
             (split ' ' line)))
     (split ~dup:false '\n' description)
 
-let rec remove_elem_from_list nb = function
-  | [] -> []
-  | l when nb <= 0 -> l
-  | _ :: tl -> remove_elem_from_list (nb - 1) tl
+let rec remove_elem_from_list nb = fun
+  | [] => []
+  | l when nb <= 0 => l
+  | _ :: tl => remove_elem_from_list (nb - 1) tl;
 
 let rec split_list_at n l =
-  let rec split n acc = function
-  | [] -> List.rev acc, []
-  | l when n <= 0 -> List.rev acc, l
-  | hd :: tl -> split (n - 1) (hd :: acc) tl in
+  let rec split n acc = fun
+  | [] => List.rev acc, []
+  | l when n <= 0 => List.rev acc, l
+  | hd :: tl => split (n - 1) (hd :: acc) tl;
   split n [] l
 
 let has_prefix ~prefix s =
-  let x = String.length prefix in
-  let n = String.length s in
-  n >= x && String.sub s 0 x = prefix
+  let x = String.length prefix;
+  let n = String.length s;
+  n >= x && String.sub s 0 x = prefix;
 
 let remove_prefix ~prefix s =
-  let x = String.length prefix in
-  let n = String.length s in
+  let x = String.length prefix;
+  let n = String.length s;
   if n >= x && String.sub s 0 x = prefix then
     Some (String.sub s x (n - x))
   else
     None
 
 let common_prefix s1 s2 =
-  let last = min (String.length s1) (String.length s2) in
+  let last = min (String.length s1) (String.length s2);
   let rec loop i =
     if last <= i then last
     else if s1.[i] = s2.[i] then
       loop (i+1)
     else
-      i in
+      i ;
   loop 0
 
-let finalize f g = try let res = f () in g (); res with exn -> g (); raise exn
+let finalize f g = try let res = f () in g (); res with exn => g (); raise exn
 
 let read_file ?(bin=false) fn =
-  let ic = (if bin then open_in_bin else open_in) fn in
-  finalize (fun () ->
-      let len = in_channel_length ic in
+  let ic = (if bin then open_in_bin else open_in) fn;
+  finalize (fun () =>
+      let len = in_channel_length ic;
       really_input_string ic len)
-    (fun () -> close_in ic)
+    (fun () => close_in ic)
 
 let write_file ?(bin=false) fn contents =
-  let oc = (if bin then open_out_bin else open_out) fn in
-  finalize (fun () ->
-      let contents = Bytes.unsafe_of_string contents in
+  let oc = (if bin then open_out_bin else open_out) fn;
+  finalize (fun () =>
+      let contents = Bytes.unsafe_of_string contents;
       output oc contents 0 @@ Bytes.length contents
     )
-    (fun () -> close_out oc)
+    (fun () => close_out oc)
 
-let (<<) g f = fun a -> g (f a)
+let (<<) g f = fun a => g (f a)
 
 let rec (--) i j =
   let rec loop acc j =
-    if j < i then acc else loop (j :: acc) (pred j) in
+    if j < i then acc else loop (j :: acc) (pred j);
   loop [] j
 
 let rec repeat n x = if n <= 0 then [] else x :: repeat (pred n) x
 
 let take_n_unsorted n l =
-  let rec loop acc n = function
-    | [] -> l
-    | _ when n <= 0 -> List.rev acc
-    | x :: xs -> loop (x :: acc) (pred n) xs in
+  let rec loop acc n = fun
+    | [] => l
+    | _ when n <= 0 => List.rev acc
+    | x :: xs => loop (x :: acc) (pred n) xs in
   loop [] n l
 
 module Bounded(E: Set.OrderedType) = struct
@@ -215,17 +215,17 @@ module Bounded(E: Set.OrderedType) = struct
   }
   let create bound = { bound ; size = 0 ; data = [] }
 
-  let rec push x = function
-    | [] -> [x]
-    | (y :: xs) as ys ->
+  let rec push x = fun
+    | [] => [x]
+    | (y :: xs) as ys =>
         let c = compare x y in
         if c < 0 then x :: ys else if c = 0 then ys else y :: push x xs
 
   let replace x xs =
     match xs with
-    | y :: xs when compare x y > 0 ->
+    | y :: xs when compare x y > 0 =>
         push x xs
-    | xs -> xs
+    | xs => xs
 
   let insert x t =
     if t.size < t.bound then begin
@@ -236,32 +236,32 @@ module Bounded(E: Set.OrderedType) = struct
 
   let get { data } = data
 
-end
+
 
 let take_n_sorted (type a) compare n l =
-  let module B = Bounded(struct type t = a let compare = compare end) in
-  let t = B.create n in
-  List.iter (fun x -> B.insert x t) l ;
+  let module B = Bounded(struct type t = a let compare = compare end);
+  let t = B.create n;
+  List.iter (fun x => B.insert x t) l ;
   B.get t
 
 let take_n ?compare n l =
   match compare with
-  | None -> take_n_unsorted n l
-  | Some compare -> take_n_sorted compare n l
+  | None => take_n_unsorted n l
+  | Some compare => take_n_sorted compare n l
 
 let select n l =
-  let rec loop n acc = function
-    | [] -> invalid_arg "Utils.select"
-    | x :: xs when n <= 0 -> x, List.rev_append acc xs
-    | x :: xs -> loop (pred n) (x :: acc) xs
-  in
+  let rec loop n acc = fun
+    | [] => invalid_arg "Utils.select"
+    | x :: xs when n <= 0 => x, List.rev_append acc xs
+    | x :: xs => loop (pred n) (x :: acc) xs
+
   loop n [] l
 
 
 let mem_char s c =
   match String.index s c with
-  | exception Not_found -> false
-  | _ -> true
+  | exception Not_found => false
+  | _ => true
 
 let check_port port =
   if mem_char port '[' || mem_char port ']' || mem_char port ':' then
@@ -273,9 +273,9 @@ let parse_addr_port s =
     ("", "")
   else if s.[0] = '[' then begin (* inline IPv6 *)
     match String.rindex s ']' with
-    | exception Not_found ->
+    | exception Not_found =>
         invalid_arg "Utils.parse_addr_port (missing ']')"
-    | pos ->
+    | pos =>
         let addr = String.sub s 1 (pos - 1) in
         let port =
           if pos = len - 1 then
@@ -288,18 +288,17 @@ let parse_addr_port s =
         addr, port
   end else begin
     match String.rindex s ']' with
-    | _pos ->
+    | _pos =>
         invalid_arg "Utils.parse_addr_port (unexpected char ']')"
-    | exception Not_found ->
+    | exception Not_found =>
         match String.index s ':' with
-        | exception _ -> s, ""
-        | pos ->
+        | exception _ => s, ""
+        | pos =>
             match String.index_from s (pos+1) ':'  with
-            | exception _ ->
+            | exception _ =>
                 let addr = String.sub s 0 pos in
                 let port = String.sub s (pos + 1) (len - pos - 1) in
                 check_port port ;
                 addr, port
-            | _pos ->
+            | _pos =>
                 invalid_arg "split_url_port: IPv6 addresses must be bracketed"
-  end

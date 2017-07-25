@@ -18,15 +18,15 @@ module Meta : {
 
 module Protocol : {
 
-  type t = component list
+  type t = component list;
 
-  and component = {
-    name: string ;
-    interface: string option ;
-    implementation: string ;
-  }
+  type component = {
+    name: string,
+    interface: string option,
+    implementation: string
+  };
 
-  type protocol = t
+  type protocol = t;
 
   let compare: protocol => protocol => int;
   let equal: protocol => protocol => bool;

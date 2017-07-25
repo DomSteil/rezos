@@ -38,12 +38,12 @@ module Tags (Entity : Entity) : {
 
   let filter:
     Client_commands.context =>
-    (string * t => bool) =>
-    (string * t) list tzresult Lwt.t;
+    (string , t => bool) =>
+    (string , t) list tzresult Lwt.t;
 
   let filter_by_tag:
     Client_commands.context =>
     string =>
-    (string * t) list tzresult Lwt.t;
+    (string , t) list tzresult Lwt.t;
 
 };

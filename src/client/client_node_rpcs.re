@@ -40,9 +40,9 @@ let bootstrapped cctxt =
 
 let complete cctxt ?block prefix =
   match block with
-  | None ->
+  | None =>
       call_service1 cctxt Services.complete prefix ()
-  | Some block ->
+  | Some block =>
       call_service2 cctxt Services.Blocks.complete block prefix ();
 
 let describe config ?recurse path =
@@ -53,29 +53,29 @@ module Blocks = {
   type block = Services.Blocks.block;
 
   type block_info = Services.Blocks.block_info = {
-    hash: Block_hash.t ;
-    net_id: Net_id.t ;
-    level: Int32.t ;
-    proto_level: int ; (* uint8 *)
-    predecessor: Block_hash.t ;
-    timestamp: Time.t ;
-    operations_hash: Operation_list_list_hash.t ;
-    fitness: MBytes.t list ;
-    data: MBytes.t ;
-    operations: Operation_hash.t list list option ;
-    protocol: Protocol_hash.t ;
-    test_network: Context.test_network;
-  }
+    hash: Block_hash.t,
+    net_id: Net_id.t,
+    level: Int32.t,
+    proto_level: int, /* uint8 */
+    predecessor: Block_hash.t,
+    timestamp: Time.t,
+    operations_hash: Operation_list_list_hash.t,
+    fitness: MBytes.t list,
+    data: MBytes.t,
+    operations: Operation_hash.t list list option,
+    protocol: Protocol_hash.t,
+    test_network: Context.test_network,
+  };
   type preapply_param = Services.Blocks.preapply_param = {
-    operations: Operation_hash.t list ;
-    sort: bool ;
-    timestamp: Time.t option ;
-  }
+    operations: Operation_hash.t list,
+    sort: bool,
+    timestamp: Time.t option,
+  };
   type preapply_result = Services.Blocks.preapply_result = {
-    operations: error Prevalidation.preapply_result ;
-    fitness: MBytes.t list ;
-    timestamp: Time.t ;
-  }
+    operations: error Prevalidation.preapply_result,
+    fitness: MBytes.t list,
+    timestamp: Time.t,
+  };
   let net cctxt h =
     call_service1 cctxt Services.Blocks.net h ();
   let level cctxt h =

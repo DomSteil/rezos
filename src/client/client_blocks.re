@@ -11,7 +11,7 @@ let genesis =
   Block_hash.of_b58check_exn
     "BLockGenesisGenesisGenesisGenesisGenesisGeneskvg68z";
 
-let get_block_hash config = function
+let get_block_hash config = fun
   | `Hash hash => return hash
   | `Genesis | `Head _ | `Test_head _ as block =>
       Client_node_rpcs.Blocks.hash config block

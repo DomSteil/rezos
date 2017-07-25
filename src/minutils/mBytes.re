@@ -11,32 +11,31 @@ open Bigarray
 
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
-let create sz = Array1.create char c_layout sz
-let length = Array1.dim
-let sub = Array1.sub
-let shift ba off = sub ba off (length ba - off)
+let create sz = Array1.create char c_layout sz;
+let length = Array1.dim;
+let sub = Array1.sub;
+let shift ba off = sub ba off (length ba - off);
 let blit src srcoff dst dstoff len =
-  Array1.blit (sub src srcoff len) (sub dst dstoff len)
+  Array1.blit (sub src srcoff len) (sub dst dstoff len);
 let copy ba =
-  let ba' = create (Array1.dim ba) in
+  let ba' = create (Array1.dim ba);
   Array1.blit ba ba';
   ba'
 
-(** Adapted from ocaml-cstruct. *)
+/** Adapted from ocaml-cstruct. */
 
 external unsafe_blit_string_to_bigstring
-  : string -> int -> t -> int -> int -> unit
+  : string => int => t => int => int => unit
   = "caml_blit_string_to_bigstring" [@@noalloc]
 
 external unsafe_blit_bigstring_to_bytes
-  : t -> int -> bytes -> int -> int -> unit
+  : t => int => bytes => int => int => unit
   = "caml_blit_bigstring_to_string" [@@noalloc]
 
-(** HACK: force Cstruct at link which provides the previous primitives. *)
-let dummy = Cstruct.byte_to_int
+let dummy = Cstruct.byte_to_int;
 
 let invalid_bounds j l =
-  invalid_arg (Printf.sprintf "invalid bounds (index %d, length %d)" j l)
+  invalid_arg (Printf.sprintf "invalid bounds (index %d, length %d)" j l);
 
 let blit_from_string src srcoff dst dstoff len =
   if len < 0 || srcoff < 0 || dstoff < 0 || String.length src - srcoff < len then
@@ -53,14 +52,14 @@ let blit_to_bytes src srcoff dst dstoff len =
   unsafe_blit_bigstring_to_bytes src srcoff dst dstoff len
 
 let to_string buf =
-  let sz = length buf in
-  let s = Bytes.create sz in
+  let sz = length buf;
+  let s = Bytes.create sz;
   unsafe_blit_bigstring_to_bytes buf 0 s 0 sz;
   Bytes.unsafe_to_string s
 
 let of_string buf =
-  let buflen = String.length buf in
-  let c = create buflen in
+  let buflen = String.length buf;
+  let c = create buflen;
   unsafe_blit_string_to_bigstring buf 0 c 0 buflen;
   c
 
@@ -74,27 +73,26 @@ let substring src srcoff len =
 include EndianBigstring.BigEndian
 
 let of_float f =
-  let buf = create 8 in
+  let buf = create 8;
   set_float buf 0 f;
   buf
 
 module LE = struct
   include EndianBigstring.LittleEndian
-end
 
 
-let (=) = ((=) : t -> t -> bool)
-let (<>) = ((<>) : t -> t -> bool)
-let (<) = ((<) : t -> t -> bool)
-let (<=) = ((<=) : t -> t -> bool)
-let (>=) = ((>=) : t -> t -> bool)
-let (>) = ((>) : t -> t -> bool)
-let compare = Pervasives.compare
+let (=) = ((=) : t => t => bool);
+let (<>) = ((<>) : t => t => bool);
+let (<) = ((<) : t => t => bool);
+let (<=) = ((<=) : t => t => bool);
+let (>=) = ((>=) : t => t => bool);
+let (>) = ((>) : t => t => bool);
+let compare = Pervasives.compare;
 
 let concat b1 b2 =
-  let l1 = length b1 in
-  let l2 = length b2 in
-  let b = create (l1 + l2) in
+  let l1 = length b1;
+  let l2 = length b2;
+  let b = create (l1 + l2);
   blit b1 0 b 0 l1 ;
   blit b2 0 b l1 l2 ;
   b

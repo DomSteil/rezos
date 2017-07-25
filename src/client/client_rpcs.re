@@ -33,7 +33,7 @@ let null_logger =
   }
 
 let config_encoding =
-  let open Data_encoding in
+  let open Data_encoding;
   conv
     (fun { host ; port ; tls } => (host, port, tls))
     (fun (host, port, tls) => { host ; port ; tls ; logger = null_logger})
@@ -45,44 +45,44 @@ let config_encoding =
 let timings_logger ppf =
   Logger {
     log_request = begin fun url _body =>
-      let tzero = Unix.gettimeofday () in
-      let url = Uri.to_string url in
+      let tzero = Unix.gettimeofday ();
+      let url = Uri.to_string url;
       Lwt.return (url, tzero)
-    end ;
+    ;
     log_success = begin fun (url, tzero) _code _body =>
-      let time = Unix.gettimeofday () -. tzero in
+      let time = Unix.gettimeofday () -. tzero;
       Format.fprintf ppf "Request to %s succeeded in %gs" url time ;
       Lwt.return_unit
-    end ;
+    ;
     log_error = begin fun (url, tzero) _code _body =>
-      let time = Unix.gettimeofday () -. tzero in
+      let time = Unix.gettimeofday () -. tzero
       Format.fprintf ppf "Request to %s failed in %gs" url time ;
       Lwt.return_unit
-    end ;
+    ;
   }
 
 let full_logger ppf =
-  let cpt = ref 0 in
+  let cpt = ref 0;
   Logger {
     log_request = begin fun url body =>
-      let id = !cpt in
-      let url = Uri.to_string url in
-      let body = Data_encoding_ezjsonm.to_string body in
+      let id = !cpt;
+      let url = Uri.to_string url;
+      let body = Data_encoding_ezjsonm.to_string body;
       incr cpt ;
       Format.fprintf ppf ">>>>%d: %s\n%s@." id url body ;
       Lwt.return (id, url)
-    end ;
+    ;
     log_success = begin fun (id, _url) code body =>
-      let code = Cohttp.Code.string_of_status code in
-      let body = Data_encoding_ezjsonm.to_string body in
+      let code = Cohttp.Code.string_of_status code;
+      let body = Data_encoding_ezjsonm.to_string body;
       Format.fprintf ppf "<<<<%d: %s\n%s@." id code body ;
       Lwt.return_unit
-    end ;
+    ;
     log_error = begin fun (id, _url) code body =>
-      let code = Cohttp.Code.string_of_status code in
+      let code = Cohttp.Code.string_of_status code;
       Format.fprintf ppf "<<<<%d: %s\n%s@." id code body ;
       Lwt.return_unit
-    end ;
+    ;
   }
 
 let default_config = {
@@ -101,7 +101,7 @@ type rpc_error =
 type error += RPC_error of config * rpc_error
 
 let rpc_error_encoding =
-  let open Data_encoding in
+  let open Data_encoding;
   union
     [ case ~tag: 1
         (obj2
@@ -138,12 +138,12 @@ let pp_error ppf (config, err) =
     Format.fprintf ppf "%s://%s:%d/%s"
       (if config.tls then "https" else "http")
       config.host config.port
-      (String.concat "/" path) in
+      (String.concat "/" path);
   match err with
   | Cannot_connect_to_RPC_server msg =>
       Format.fprintf ppf "Cannot contact RPC server: %s" msg
   | Request_failed (path, code) =>
-      let code = Cohttp.Code.code_of_status code in
+      let code = Cohttp.Code.code_of_status code;
       Format.fprintf ppf "@[<v 2>RPC Request failed:@,\
                           Path: %a@,\
                           HTTP status: %d (%s)@]"
@@ -182,35 +182,34 @@ let () =
     (function RPC_error (config, err) => Some (config, err) | _ => None)
     (fun (config, err) => RPC_error (config, err))
 
-let fail config err = fail (RPC_error (config, err))
+let fail config err = fail (RPC_error (config, err));
 
 let make_request config log_request meth service json =
-  let scheme = if config.tls then "https" else "http" in
-  let path = String.concat "/" service in
+  let scheme = if config.tls then "https" else "http";
+  let path = String.concat "/" service;
   let uri =
-    Uri.make ~scheme ~host:config.host ~port:config.port ~path () in
-  let reqbody = Data_encoding_ezjsonm.to_string json in
+    Uri.make ~scheme ~host:config.host ~port:config.port ~path ();
+  let reqbody = Data_encoding_ezjsonm.to_string json;
   Lwt.catch begin fun () =>
-    let body = Cohttp_lwt_body.of_string reqbody in
+    let body = Cohttp_lwt_body.of_string reqbody;
     Cohttp_lwt_unix.Client.call meth ~body uri >>= fun (code, ansbody) =>
     log_request uri json >>= fun reqid =>
     return (reqid, code.Cohttp.Response.status, ansbody)
   end begin fun exn =>
     let msg = match exn with
       | Unix.Unix_error (e, _, _) => Unix.error_message e
-      | e => Printexc.to_string e in
+      | e => Printexc.to_string e;
     fail config (Cannot_connect_to_RPC_server msg)
-  end
 
 let get_streamed_json config meth service json =
-  let Logger logger = config.logger in
+  let Logger logger = config.logger;
   make_request config logger.log_request
     meth service json >>=? fun (reqid, code, ansbody) =>
   match code with
   | #Cohttp.Code.success_status =>
-      let ansbody = Cohttp_lwt_body.to_stream ansbody in
-      let json_st = Data_encoding_ezjsonm.from_stream ansbody in
-      let parsed_st, push = Lwt_stream.create () in
+      let ansbody = Cohttp_lwt_body.to_stream ansbody;
+      let json_st = Data_encoding_ezjsonm.from_stream ansbody;
+      let parsed_st, push = Lwt_stream.create ();
       let rec loop () =
         Lwt_stream.get json_st >>= function
         | Some (Ok json) as v =>
@@ -222,11 +221,11 @@ let get_streamed_json config meth service json =
             Lwt.return_unit
         | Some (Error msg) =>
             let error =
-              RPC_error (config, Malformed_json (service, "", msg)) in
+              RPC_error (config, Malformed_json (service, "", msg));
             push (Some (Error [error])) ;
             push None ;
             Lwt.return_unit
-      in
+
       Lwt.async loop ;
       return parsed_st
   | err =>
@@ -235,12 +234,12 @@ let get_streamed_json config meth service json =
       fail config (Request_failed (service, err))
 
 let get_json config meth service json =
-  let Logger logger = config.logger in
+  let Logger logger = config.logger;
   make_request config logger.log_request
     meth service json >>=? fun (reqid, code, ansbody) =>
   Cohttp_lwt_body.to_string ansbody >>= fun ansbody =>
   match code with
-  | #Cohttp.Code.success_status => begin
+  | #Cohttp.Code.success_status =>
       if ansbody = "" then
         return `Null
       else
@@ -251,7 +250,7 @@ let get_json config meth service json =
         | Ok json =>
             logger.log_success reqid code json >>= fun () =>
             return json
-    end
+
   | err =>
       logger.log_error reqid code ansbody >>= fun () =>
       fail config (Request_failed (service, err))
@@ -263,22 +262,22 @@ let parse_answer config service path json =
   | Ok v => return v
 
 let call_service0 cctxt service arg =
-  let meth, path, arg = RPC.forge_request service () arg in
+  let meth, path, arg = RPC.forge_request service () arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_answer cctxt service path json
 
 let call_service1 cctxt service a1 arg =
-  let meth, path, arg = RPC.forge_request service ((), a1) arg in
+  let meth, path, arg = RPC.forge_request service ((), a1) arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_answer cctxt service path json
 
 let call_service2 cctxt service a1 a2 arg =
-  let meth, path, arg = RPC.forge_request service (((), a1), a2) arg in
+  let meth, path, arg = RPC.forge_request service (((), a1), a2) arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_answer cctxt service path json
 
 let call_streamed_service0 cctxt service arg =
-  let meth, path, arg = RPC.forge_request service () arg in
+  let meth, path, arg = RPC.forge_request service () arg;
   get_streamed_json cctxt meth path arg >>=? fun json_st =>
   let parsed_st, push = Lwt_stream.create () in
   let rec loop () =
@@ -288,11 +287,10 @@ let call_streamed_service0 cctxt service arg =
         | Ok v => push (Some (Ok v)) ; loop ()
         | Error _ as err =>
             push (Some err) ; push None ; Lwt.return_unit
-      end
     | Some (Error _) as v =>
         push v ; push None ; Lwt.return_unit
     | None => push None ; Lwt.return_unit
-  in
+
   Lwt.async loop ;
   return parsed_st
 
@@ -303,21 +301,21 @@ let parse_err_answer config service path json =
   | Ok v => Lwt.return v
 
 let call_err_service0 cctxt service arg =
-  let meth, path, arg = RPC.forge_request service () arg in
+  let meth, path, arg = RPC.forge_request service () arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_err_answer cctxt service path json
 
 let call_err_service1 cctxt service a1 arg =
-  let meth, path, arg = RPC.forge_request service ((), a1) arg in
+  let meth, path, arg = RPC.forge_request service ((), a1) arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_err_answer cctxt service path json
 
 let call_err_service2 cctxt service a1 a2 arg =
-  let meth, path, arg = RPC.forge_request service (((), a1), a2) arg in
+  let meth, path, arg = RPC.forge_request service (((), a1), a2) arg;
   get_json cctxt meth path arg >>=? fun json =>
   parse_err_answer cctxt service path json
 
 let call_describe0 cctxt service path arg =
-  let meth, prefix, arg = RPC.forge_request service () arg in
+  let meth, prefix, arg = RPC.forge_request service () arg;
   get_json cctxt meth (prefix @ path) arg >>=? fun json =>
   parse_answer cctxt service prefix json

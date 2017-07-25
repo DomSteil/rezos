@@ -10,11 +10,11 @@
 let compiler_name = "tezos-protocol-compiler";
 
 let () =
-  if Filename.basename Sys.argv.(0) = compiler_name then begin
+  if Filename.basename Sys.argv.(0) = compiler_name {
     try
       Tezos_compiler.main ();
       Pervasives.exit 0
-    with exn ->
+    with exn =>
       Format.eprintf "%a\n%!" Opterrors.report_error exn;
-      Pervasives.exit 1
-  end
+      Pervasives.exit 1;
+    };
