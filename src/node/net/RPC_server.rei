@@ -1,18 +1,18 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
-(** Typed RPC services: server implementation. *)
+/** Typed RPC services: server implementation. */
 
-(** A handle on the server worker. *)
+/** A handle on the server worker. */
 type server
 
-(** Promise a running RPC server. To call an RPC at /p/a/t/h/ in the
+/** Promise a running RPC server. To call an RPC at /p/a/t/h/ in the
     provided service, one must call the URI /call/p/a/t/h/. Calling
     /list/p/a/t/h/ will list the services prefixed by /p/a/t/h/, if
     any. Calling /schema/p/a/t/h/ will describe the input and output
@@ -36,7 +36,7 @@ type server
     code is [404]. The optional [post_hook] is called if both the
     [pre_hook] and the serviced answered with a [404] code. [pre_hook] and
     [post_hook] return a pair made of an optional Content-Type value and the
-    answer. *)
+    answer. */
 val launch :
   ?pre_hook: (string -> (string option * string RPC.Answer.answer) Lwt.t) ->
   ?post_hook: (string -> (string option * string RPC.Answer.answer) Lwt.t) ->
