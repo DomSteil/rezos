@@ -1,38 +1,38 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 open P2p_types
 include Logging.Make (struct let name = "p2p.discovery" end)
 
 type t = ()
-let create _pool = ()
-let restart () = (() : unit)
-let shutdown () = Lwt.return_unit
+let create _pool = ();
+let restart () = (() : unit);
+let shutdown () = Lwt.return_unit;
 
-let inet_addr = Unix.inet_addr_of_string "ff0e::54:455a:3053"
+let inet_addr = Unix.inet_addr_of_string "ff0e::54:455a:3053";
 
-module Message = struct
+module Message = {
 
   let encoding =
-    Data_encoding.(tup3 (Fixed.string 10) Peer_id.encoding int16)
+    Data_encoding.(tup3 (Fixed.string 10) Peer_id.encoding int16);
 
-  let length = Data_encoding.Binary.fixed_length_exn encoding
+  let length = Data_encoding.Binary.fixed_length_exn encoding;
 
   let make peer_id port =
-    Data_encoding.Binary.to_bytes encoding ("DISCOMAGIC", peer_id, port)
+    Data_encoding.Binary.to_bytes encoding ("DISCOMAGIC", peer_id, port);
 
-end
+};
 
-(* Sends discover messages into space in an exponentially delayed loop,
-   restartable using a condition *)
+/* Sends discover messages into space in an exponentially delayed loop,
+   restartable using a condition */
 let sender sock saddr my_peer_id inco_port cancelation restart =
-  let buf = Message.make my_peer_id inco_port in
+  let buf = Message.make my_peer_id inco_port;
   let rec loop delay n =
     Lwt.catch
       (fun () ->

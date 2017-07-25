@@ -1,43 +1,31 @@
-(**************************************************************************)
-(*                                                                        *)
-(*    Copyright (c) 2014 - 2016.                                          *)
-(*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  *)
-(*                                                                        *)
-(*    All rights reserved. No warranty, explicit or implicit, provided.   *)
-(*                                                                        *)
-(**************************************************************************)
-
-(* TODO encode/encrypt before to push into the writer pipe. *)
-(* TODO patch Sodium.Box to avoid allocation of the encrypted buffer.*)
-(* TODO patch Data_encoding for continuation-based binary writer/reader. *)
-(* TODO test `close ~wait:true`. *)
-(* TODO nothing in welcoming message proves that the incoming peer is
-        the owner of the public key... only the first message will
-        really proves it. Should this to be changed? Not really
-        important, but... an attacker might forge a random public key
-        with enough proof of work (hard task), open a connection, wait
-        infinitly. This would avoid the real peer to talk with us. And
-        this might also have an influence on its "score". *)
+/**************************************************************************/
+/*                                                                        */
+/*    Copyright (c) 2014 - 2016.                                          */
+/*    Dynamic Ledger Solutions, Inc. <contact@tezos.com>                  */
+/*                                                                        */
+/*    All rights reserved. No warranty, explicit or implicit, provided.   */
+/*                                                                        */
+/**************************************************************************/
 
 open P2p_types
 
-include Logging.Make(struct let name = "p2p.connection" end)
+include Logging.Make(struct let name = "p2p.connection" end);
 
-type error += Decipher_error
-type error += Invalid_message_size
-type error += Encoding_error
-type error += Rejected
-type error += Decoding_error
-type error += Myself of Id_point.t
-type error += Not_enough_proof_of_work of Peer_id.t
-type error += Invalid_auth
+type error += Decipher_error;
+type error += Invalid_message_size;
+type error += Encoding_error;
+type error += Rejected;
+type error += Decoding_error;
+type error += Myself of Id_point.t;
+type error += Not_enough_proof_of_work of Peer_id.t;
+type error += Invalid_auth;
 
-module Crypto = struct
+module Crypto = {
 
-  let header_length = 2
-  let crypto_overhead = 18 (* FIXME import from Sodium.Box. *)
+  let header_length = 2l
+  let crypto_overhead = 18 (* FIXME import from Sodium.Box. *);
   let max_content_length =
-    1 lsl (header_length * 8) - crypto_overhead
+    1 lsl (header_length * 8) - crypto_overhead;
 
   type data = {
     channel_key : Crypto_box.channel_key ;
@@ -46,58 +34,57 @@ module Crypto = struct
   }
 
   let write_chunk fd cryptobox_data buf =
-    let header_buf = MBytes.create header_length in
-    let local_nonce = cryptobox_data.local_nonce in
+    let header_buf = MBytes.create header_length;
+    let local_nonce = cryptobox_data.local_nonce
     cryptobox_data.local_nonce <- Crypto_box.increment_nonce local_nonce ;
     let encrypted_message =
-      Crypto_box.fast_box cryptobox_data.channel_key buf local_nonce in
-    let encrypted_len = MBytes.length encrypted_message in
+      Crypto_box.fast_box cryptobox_data.channel_key buf local_nonce;
+    let encrypted_len = MBytes.length encrypted_message
     fail_unless
       (encrypted_len < max_content_length)
-      Invalid_message_size >>=? fun () ->
+      Invalid_message_size >>=? fun () =>
     MBytes.set_int16 header_buf 0 encrypted_len ;
-    P2p_io_scheduler.write fd header_buf >>=? fun () ->
-    P2p_io_scheduler.write fd encrypted_message >>=? fun () ->
+    P2p_io_scheduler.write fd header_buf >>=? fun () =>
+    P2p_io_scheduler.write fd encrypted_message >>=? fun () =>
     return ()
 
   let read_chunk fd cryptobox_data =
-    let header_buf = MBytes.create header_length in
-    P2p_io_scheduler.read_full ~len:header_length fd header_buf >>=? fun () ->
-    let len = MBytes.get_uint16 header_buf 0 in
-    let buf = MBytes.create len in
-    P2p_io_scheduler.read_full ~len fd buf >>=? fun () ->
-    let remote_nonce = cryptobox_data.remote_nonce in
+    let header_buf = MBytes.create header_length;
+    P2p_io_scheduler.read_full ~len:header_length fd header_buf >>=? fun () =>
+    let len = MBytes.get_uint16 header_buf 0;
+    let buf = MBytes.create len;
+    P2p_io_scheduler.read_full ~len fd buf >>=? fun () =>
+    let remote_nonce = cryptobox_data.remote_nonce;
     cryptobox_data.remote_nonce <- Crypto_box.increment_nonce remote_nonce ;
     match
       Crypto_box.fast_box_open cryptobox_data.channel_key buf remote_nonce
     with
-    | None ->
+    | None =>
         fail Decipher_error
-    | Some buf ->
+    | Some buf =>
         return buf
 
-end
 
-module Connection_message = struct
+module Connection_message = {
 
   type t = {
-    port : int option ;
-    versions : Version.t list ;
-    public_key : Crypto_box.public_key ;
-    proof_of_work_stamp : Crypto_box.nonce ;
-    message_nonce : Crypto_box.nonce ;
-  }
+    port : int option ,
+    versions : Version.t list ,
+    public_key : Crypto_box.public_key ,
+    proof_of_work_stamp : Crypto_box.nonce ,
+    message_nonce : Crypto_box.nonce
+  };
 
   let encoding =
-    let open Data_encoding in
+    let open Data_encoding;
     conv
       (fun { port ; public_key ; proof_of_work_stamp ;
-             message_nonce ; versions } ->
-        let port = match port with None -> 0 | Some port -> port in
+             message_nonce ; versions } =>
+        let port = match port with None => 0 | Some port => port in
         (port, public_key, proof_of_work_stamp,
          message_nonce, versions))
       (fun (port, public_key, proof_of_work_stamp,
-            message_nonce, versions) ->
+            message_nonce, versions) =>
         let port = if port = 0 then None else Some port in
         { port ; public_key ; proof_of_work_stamp ;
           message_nonce ; versions })
@@ -110,99 +97,97 @@ module Connection_message = struct
 
   let write fd message =
     let encoded_message_len =
-      Data_encoding.Binary.length encoding message in
+      Data_encoding.Binary.length encoding message;
     fail_unless
       (encoded_message_len < Crypto.max_content_length)
-      Encoding_error >>=? fun () ->
-    let len = Crypto.header_length + encoded_message_len in
-    let buf = MBytes.create len in
+      Encoding_error >>=? fun () =>
+    let len = Crypto.header_length + encoded_message_len;
+    let buf = MBytes.create len;
     match Data_encoding.Binary.write
             encoding message buf Crypto.header_length with
-    | None ->
+    | None =>
         fail Encoding_error
-    | Some last ->
-        fail_unless (last = len) Encoding_error >>=? fun () ->
+    | Some last =>
+        fail_unless (last = len) Encoding_error >>=? fun () =>
         MBytes.set_int16 buf 0 encoded_message_len ;
         P2p_io_scheduler.write fd buf
 
   let read fd =
-    let header_buf = MBytes.create Crypto.header_length in
+    let header_buf = MBytes.create Crypto.header_length;
     P2p_io_scheduler.read_full
-      ~len:Crypto.header_length fd header_buf >>=? fun () ->
-    let len = MBytes.get_uint16 header_buf 0 in
-    let buf = MBytes.create len in
-    P2p_io_scheduler.read_full ~len fd buf >>=? fun () ->
+      ~len:Crypto.header_length fd header_buf >>=? fun () =>
+    let len = MBytes.get_uint16 header_buf 0;
+    let buf = MBytes.create len
+    P2p_io_scheduler.read_full ~len fd buf >>=? fun () =>
     match Data_encoding.Binary.read encoding buf 0 len with
-    | None ->
+    | None =>
         fail Decoding_error
-    | Some (read_len, message) ->
+    | Some (read_len, message) =>
         if read_len <> len then
           fail Decoding_error
         else
-          return message
+          return message;
 
-end
+module Ack = {
 
-module Ack = struct
-
-  type t = Ack | Nack
-  let ack = MBytes.of_string "\255"
-  let nack = MBytes.of_string "\000"
+  type t = Ack | Nack;
+  let ack = MBytes.of_string "\255";
+  let nack = MBytes.of_string "\000";
 
   let write cryptobox_data fd b =
     Crypto.write_chunk cryptobox_data fd
-      (match b with Ack -> ack | Nack -> nack)
+      (match b with Ack => ack | Nack => nack);
 
   let read fd cryptobox_data =
-    Crypto.read_chunk fd cryptobox_data >>=? fun buf ->
+    Crypto.read_chunk fd cryptobox_data >>=? fun buf =>
     return (buf <> nack)
 
-end
 
 type authenticated_fd =
-  P2p_io_scheduler.connection * Connection_info.t * Crypto.data
+  P2p_io_scheduler.connection * Connection_info.t * Crypto.data;
 
 let kick (fd, _ , cryptobox_data) =
-  Ack.write fd cryptobox_data Nack >>= fun _ ->
-  P2p_io_scheduler.close fd >>= fun _ ->
-  Lwt.return_unit
+  Ack.write fd cryptobox_data Nack >>= fun _ =>
+  P2p_io_scheduler.close fd >>= fun _ =>
+  Lwt.return_unit;
 
-(* First step: write and read credentials, makes no difference
+/* First step: write and read credentials, makes no difference
    whether we're trying to connect to a peer or checking an incoming
-   connection, both parties must first introduce themselves. *)
+   connection, both parties must first introduce themselves. */
+
 let authenticate
     ~proof_of_work_target
     ~incoming fd (remote_addr, remote_socket_port as point)
     ?listening_port identity supported_versions =
-  let local_nonce = Crypto_box.random_nonce () in
-  lwt_debug "Sending authenfication to %a" Point.pp point >>= fun () ->
+  let local_nonce = Crypto_box.random_nonce ();
+  lwt_debug "Sending authenfication to %a" Point.pp point >>= fun () =>
   Connection_message.write fd
     { public_key = identity.Identity.public_key ;
       proof_of_work_stamp = identity.proof_of_work_stamp ;
       message_nonce = local_nonce ;
       port = listening_port ;
-      versions = supported_versions } >>=? fun () ->
-  Connection_message.read fd >>=? fun msg ->
+      versions = supported_versions } >>=? fun () =>
+  Connection_message.read fd >>=? fun msg =>
   let remote_listening_port =
-    if incoming then msg.port else Some remote_socket_port in
-  let id_point = remote_addr, remote_listening_port in
-  let remote_peer_id = Crypto_box.hash msg.public_key in
+    if incoming then msg.port else Some remote_socket_port;
+  let id_point = remote_addr, remote_listening_port;
+  let remote_peer_id = Crypto_box.hash msg.public_key;
   fail_unless
     (remote_peer_id <> identity.Identity.peer_id)
-    (Myself id_point) >>=? fun () ->
+    (Myself id_point) >>=? fun () =>
   fail_unless
     (Crypto_box.check_proof_of_work
        msg.public_key msg.proof_of_work_stamp proof_of_work_target)
-    (Not_enough_proof_of_work remote_peer_id) >>=? fun () ->
+    (Not_enough_proof_of_work remote_peer_id) >>=? fun () =>
   let channel_key =
-    Crypto_box.precompute identity.Identity.secret_key msg.public_key in
+    Crypto_box.precompute identity.Identity.secret_key msg.public_key;
   let info =
     { Connection_info.peer_id = remote_peer_id ;
       versions = msg.versions ; incoming ;
       id_point ; remote_socket_port ;} in
   let cryptobox_data =
     { Crypto.channel_key ; local_nonce ;
-      remote_nonce = msg.message_nonce } in
+      remote_nonce = msg.message_nonce };
   return (info, (fd, info, cryptobox_data))
 
 type connection = {
@@ -213,10 +198,10 @@ type connection = {
 }
 
 let next_conn_id =
-  let cpt = ref 0 in
-  fun () -> incr cpt ;!cpt
+  let cpt = ref 0 ;
+  fun () => incr cpt ;!cpt
 
-module Reader = struct
+module Reader = {
 
   type 'msg t = {
     canceler: Canceler.t ;
@@ -230,63 +215,62 @@ module Reader = struct
     return (Data_encoding.Binary.of_bytes st.encoding buf)
 
   let rec worker_loop st =
-    Lwt_unix.yield () >>= fun () ->
-    Lwt_utils.protect ~canceler:st.canceler begin fun () ->
-      Crypto.read_chunk st.conn.fd st.conn.cryptobox_data >>=? fun buf ->
+    Lwt_unix.yield () >>= fun () =>
+    Lwt_utils.protect ~canceler:st.canceler begin fun () =>
+      Crypto.read_chunk st.conn.fd st.conn.cryptobox_data >>=? fun buf =>
       let size = 6 * (Sys.word_size / 8) + MBytes.length buf in
       lwt_debug "reading %d bytes from %a"
-        size Connection_info.pp st.conn.info >>= fun () ->
-      read_message st buf >>=? fun msg ->
+        size Connection_info.pp st.conn.info >>= fun () =>
+      read_message st buf >>=? fun msg =>
       match msg with
-      | None ->
-          Lwt_pipe.push st.messages (Error [Decoding_error]) >>= fun () ->
+      | None =>
+          Lwt_pipe.push st.messages (Error [Decoding_error]) >>= fun () =>
           return false
-      | Some msg ->
-          Lwt_pipe.push st.messages (Ok (size, msg)) >>= fun () ->
+      | Some msg =>
+          Lwt_pipe.push st.messages (Ok (size, msg)) >>= fun () =>
           return true
     end >>= function
-    | Ok true ->
+    | Ok true =>
         worker_loop st
-    | Ok false ->
-        Canceler.cancel st.canceler >>= fun () ->
+    | Ok false =>
+        Canceler.cancel st.canceler >>= fun () =>
         Lwt.return_unit
-    | Error [Lwt_utils.Canceled | Exn Lwt_pipe.Closed] ->
+    | Error [Lwt_utils.Canceled | Exn Lwt_pipe.Closed] =>
       lwt_debug "connection closed to %a"
-        Connection_info.pp st.conn.info >>= fun () ->
+        Connection_info.pp st.conn.info >>= fun () =>
         Lwt.return_unit
-    | Error _ as err ->
+    | Error _ as err =>
         Lwt_pipe.safe_push_now st.messages err ;
-        Canceler.cancel st.canceler >>= fun () ->
+        Canceler.cancel st.canceler >>= fun () =>
         Lwt.return_unit
 
   let run ?size conn encoding canceler =
-    let compute_size = function
-      | Ok (size, _) -> (Sys.word_size / 8) * 11 + size
-      | Error _ -> 0 (* we push Error only when we close the socket,
+    let compute_size = fun
+      | Ok (size, _) => (Sys.word_size / 8) * 11 + size
+      | Error _ => 0 (* we push Error only when we close the socket,
                         we don't fear memory leaks in that case... *) in
-    let size = map_option size ~f:(fun max -> (max, compute_size)) in
+    let size = map_option size ~f:(fun max => (max, compute_size)) in
     let st =
       { canceler ; conn ; encoding ;
         messages = Lwt_pipe.create ?size () ;
         worker = Lwt.return_unit ;
       } in
-    Canceler.on_cancel st.canceler begin fun () ->
+    Canceler.on_cancel st.canceler begin fun () =>
       Lwt_pipe.close st.messages ;
       Lwt.return_unit
     end ;
     st.worker <-
       Lwt_utils.worker "reader"
-        (fun () -> worker_loop st)
-        (fun () -> Canceler.cancel st.canceler) ;
+        (fun () => worker_loop st)
+        (fun () => Canceler.cancel st.canceler) ;
     st
 
   let shutdown st =
-    Canceler.cancel st.canceler >>= fun () ->
-    st.worker
+    Canceler.cancel st.canceler >>= fun () =>
+    st.worker;
 
-end
 
-module Writer = struct
+module Writer = {
 
   type 'msg t = {
     canceler: Canceler.t ;
@@ -298,84 +282,84 @@ module Writer = struct
 
   let encode_message st msg =
     try ok (Data_encoding.Binary.to_bytes st.encoding msg)
-    with _ -> error Encoding_error
+    with _ => error Encoding_error
 
   let rec worker_loop st =
-    Lwt_unix.yield () >>= fun () ->
-    Lwt_utils.protect ~canceler:st.canceler begin fun () ->
+    Lwt_unix.yield () >>= fun () =>
+    Lwt_utils.protect ~canceler:st.canceler begin fun () =>
       Lwt_pipe.pop st.messages >>= return
     end >>= function
-    | Error [Lwt_utils.Canceled | Exn Lwt_pipe.Closed] ->
+    | Error [Lwt_utils.Canceled | Exn Lwt_pipe.Closed] =>
         lwt_debug "connection closed to %a"
-          Connection_info.pp st.conn.info >>= fun () ->
+          Connection_info.pp st.conn.info >>= fun () =>
         Lwt.return_unit
-    | Error err ->
+    | Error err =>
         lwt_log_error
           "@[<v 2>error writing to %a@ %a@]"
-          Connection_info.pp st.conn.info pp_print_error err >>= fun () ->
-        Canceler.cancel st.canceler >>= fun () ->
+          Connection_info.pp st.conn.info pp_print_error err >>= fun () =>
+        Canceler.cancel st.canceler >>= fun () =>
         Lwt.return_unit
-    | Ok (buf, wakener) ->
+    | Ok (buf, wakener) =>
         lwt_debug "writing %d bytes to %a"
-          (MBytes.length buf) Connection_info.pp st.conn.info >>= fun () ->
-        Lwt_utils.protect ~canceler:st.canceler begin fun () ->
+          (MBytes.length buf) Connection_info.pp st.conn.info >>= fun () =>
+        Lwt_utils.protect ~canceler:st.canceler begin fun () =>
           Crypto.write_chunk st.conn.fd st.conn.cryptobox_data buf
-        end >>= fun res ->
+        end >>= fun res =>
         match res with
-        | Ok () ->
-            iter_option wakener ~f:(fun u -> Lwt.wakeup_later u res) ;
+        | Ok () =>
+            iter_option wakener ~f:(fun u => Lwt.wakeup_later u res) ;
             worker_loop st
-        | Error err ->
+        | Error err =>
             iter_option wakener
-              ~f:(fun u ->
+              ~f:(fun u =>
                   Lwt.wakeup_later u
                     (Error [P2p_io_scheduler.Connection_closed])) ;
             match err with
-            | [ Lwt_utils.Canceled | Exn Lwt_pipe.Closed ] ->
+            | [ Lwt_utils.Canceled | Exn Lwt_pipe.Closed ] =>
                 lwt_debug "connection closed to %a"
-                  Connection_info.pp st.conn.info >>= fun () ->
+                  Connection_info.pp st.conn.info >>= fun () =>
                 Lwt.return_unit
-            | [ P2p_io_scheduler.Connection_closed ] ->
+            | [ P2p_io_scheduler.Connection_closed ] =>
                 lwt_debug "connection closed to %a"
-                  Connection_info.pp st.conn.info >>= fun () ->
-                Canceler.cancel st.canceler >>= fun () ->
+                  Connection_info.pp st.conn.info >>= fun () =>
+                Canceler.cancel st.canceler >>= fun () =>
                 Lwt.return_unit
-            | err ->
+            | err =>
                 lwt_log_error
                   "@[<v 2>error writing to %a@ %a@]"
                   Connection_info.pp st.conn.info
-                  pp_print_error err >>= fun () ->
-                Canceler.cancel st.canceler >>= fun () ->
+                  pp_print_error err >>= fun () =>
+                Canceler.cancel st.canceler >>= fun () =>
                 Lwt.return_unit
 
   let run ?size conn encoding canceler =
     let compute_size = function
-      | buf, None -> Sys.word_size + MBytes.length buf
-      | buf, Some _ -> 2 * Sys.word_size + MBytes.length buf
+      | buf, None => Sys.word_size + MBytes.length buf
+      | buf, Some _ => 2 * Sys.word_size + MBytes.length buf
     in
-    let size = map_option size ~f:(fun max -> max, compute_size) in
+    let size = map_option size ~f:(fun max => max, compute_size) in
     let st =
       { canceler ; conn ; encoding ;
         messages = Lwt_pipe.create ?size () ;
         worker = Lwt.return_unit ;
       } in
-    Canceler.on_cancel st.canceler begin fun () ->
+    Canceler.on_cancel st.canceler begin fun () =>
       Lwt_pipe.close st.messages ;
       while not (Lwt_pipe.is_empty st.messages) do
         let _, w = Lwt_pipe.pop_now_exn st.messages in
         iter_option w
-          ~f:(fun u -> Lwt.wakeup_later u (Error [Exn Lwt_pipe.Closed]))
+          ~f:(fun u => Lwt.wakeup_later u (Error [Exn Lwt_pipe.Closed]))
       done ;
       Lwt.return_unit
     end ;
     st.worker <-
       Lwt_utils.worker "writer"
-        (fun () -> worker_loop st)
-        (fun () -> Canceler.cancel st.canceler) ;
+        (fun () => worker_loop st)
+        (fun () => Canceler.cancel st.canceler) ;
     st
 
   let shutdown st =
-    Canceler.cancel st.canceler >>= fun () ->
+    Canceler.cancel st.canceler >>= fun () =>
     st.worker
 
 end
@@ -395,17 +379,17 @@ let info { conn } = conn.info
 let accept
     ?incoming_message_queue_size ?outgoing_message_queue_size
     (fd, info, cryptobox_data) encoding =
-  Lwt_utils.protect begin fun () ->
-    Ack.write fd cryptobox_data Ack >>=? fun () ->
+  Lwt_utils.protect begin fun () =>
+    Ack.write fd cryptobox_data Ack >>=? fun () =>
     Ack.read fd cryptobox_data
-  end ~on_error:begin fun err ->
-    P2p_io_scheduler.close fd >>= fun _ ->
+  end ~on_error:begin fun err =>
+    P2p_io_scheduler.close fd >>= fun _ =>
     match err with
-    | [ P2p_io_scheduler.Connection_closed ] -> fail Rejected
-    | [ Decipher_error ] -> fail Invalid_auth
-    | err -> Lwt.return (Error err)
-  end >>=? fun accepted ->
-  fail_unless accepted Rejected >>=? fun () ->
+    | [ P2p_io_scheduler.Connection_closed ] => fail Rejected
+    | [ Decipher_error ] => fail Invalid_auth
+    | err => Lwt.return (Error err)
+  end >>=? fun accepted =>
+  fail_unless accepted Rejected >>=? fun () =>
   let canceler = Canceler.create () in
   let conn = { id = next_conn_id (); fd ; info ; cryptobox_data } in
   let reader =
@@ -413,8 +397,8 @@ let accept
   and writer =
     Writer.run ?size:outgoing_message_queue_size conn encoding canceler in
   let conn = { conn ; reader ; writer } in
-  Canceler.on_cancel canceler begin fun () ->
-    P2p_io_scheduler.close fd >>= fun _ ->
+  Canceler.on_cancel canceler begin fun () =>
+    P2p_io_scheduler.close fd >>= fun _ =>
     Lwt.return_unit
   end ;
   return conn
@@ -424,47 +408,47 @@ exception Connection_closed
 
 let catch_closed_pipe f =
   Lwt.catch f begin function
-    | Lwt_pipe.Closed -> fail P2p_io_scheduler.Connection_closed
-    | exn -> fail (Exn exn)
+    | Lwt_pipe.Closed => fail P2p_io_scheduler.Connection_closed
+    | exn => fail (Exn exn)
   end
 
 let write { writer } msg =
-  catch_closed_pipe begin fun () ->
-    Lwt.return (Writer.encode_message writer msg) >>=? fun buf ->
+  catch_closed_pipe begin fun () =>
+    Lwt.return (Writer.encode_message writer msg) >>=? fun buf =>
     Lwt_pipe.push writer.messages (buf, None) >>= return
   end
 let write_sync { writer } msg =
-  catch_closed_pipe begin fun () ->
+  catch_closed_pipe begin fun () =>
     let waiter, wakener = Lwt.wait () in
-    Lwt.return (Writer.encode_message writer msg) >>=? fun buf ->
-    Lwt_pipe.push writer.messages (buf, Some wakener) >>= fun () ->
+    Lwt.return (Writer.encode_message writer msg) >>=? fun buf =>
+    Lwt_pipe.push writer.messages (buf, Some wakener) >>= fun () =>
     waiter
   end
 let write_now { writer } msg =
-  Writer.encode_message writer msg >>? fun buf ->
+  Writer.encode_message writer msg >>? fun buf =>
   try Ok (Lwt_pipe.push_now writer.messages (buf, None))
-  with Lwt_pipe.Closed -> Error [P2p_io_scheduler.Connection_closed]
+  with Lwt_pipe.Closed => Error [P2p_io_scheduler.Connection_closed]
 
 let raw_write_sync { writer } bytes =
-  catch_closed_pipe begin fun () ->
+  catch_closed_pipe begin fun () =>
     let waiter, wakener = Lwt.wait () in
-    Lwt_pipe.push writer.messages (bytes, Some wakener) >>= fun () ->
+    Lwt_pipe.push writer.messages (bytes, Some wakener) >>= fun () =>
     waiter
   end
 
 let is_readable { reader } =
   not (Lwt_pipe.is_empty reader.messages)
 let wait_readable { reader } =
-  catch_closed_pipe begin fun () ->
+  catch_closed_pipe begin fun () =>
     Lwt_pipe.values_available reader.messages >>= return
   end
 let read { reader } =
-  catch_closed_pipe begin fun () ->
+  catch_closed_pipe begin fun () =>
     Lwt_pipe.pop reader.messages
   end
 let read_now { reader } =
   try Lwt_pipe.pop_now reader.messages
-  with Lwt_pipe.Closed -> Some (Error [P2p_io_scheduler.Connection_closed])
+  with Lwt_pipe.Closed => Some (Error [P2p_io_scheduler.Connection_closed])
 
 let stat { conn = { fd } } = P2p_io_scheduler.stat fd
 
@@ -476,9 +460,8 @@ let close ?(wait = false) st =
       Lwt_pipe.close st.writer.messages ;
       st.writer.worker
     end
-  end >>= fun () ->
-  Reader.shutdown st.reader >>= fun () ->
-  Writer.shutdown st.writer >>= fun () ->
-  P2p_io_scheduler.close st.conn.fd >>= fun _ ->
+  end >>= fun () =>
+  Reader.shutdown st.reader >>= fun () =>
+  Writer.shutdown st.writer >>= fun () =>
+  P2p_io_scheduler.close st.conn.fd >>= fun _ =>
   Lwt.return_unit
-
