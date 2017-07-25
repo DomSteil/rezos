@@ -7,7 +7,7 @@
 /*                                                                        */
 /**************************************************************************/
 
-(** Commands *)
+/** Commands */
 
 let show (args : Node_shared_arg.t) =
   if not @@ Sys.file_exists args.config_file then
@@ -16,8 +16,8 @@ let show (args : Node_shared_arg.t) =
        Warning: no config file at %s,\n\
       \         displaying the default configuration.\n@."
       args.config_file ;
-  Node_shared_arg.read_and_patch_config_file args >>=? fun cfg ->
-  Node_config_file.check cfg >>= fun () ->
+  Node_shared_arg.read_and_patch_config_file args >>=? fun cfg =>
+  Node_config_file.check cfg >>= fun () =>
   print_endline @@ Node_config_file.to_string cfg ;
   return ()
 
@@ -26,8 +26,8 @@ let reset (args : Node_shared_arg.t) =
     Format.eprintf
       "Ignoring previous configuration file: %s.@."
       args.config_file ;
-  Node_shared_arg.read_and_patch_config_file args >>=? fun cfg ->
-  Node_config_file.check cfg >>= fun () ->
+  Node_shared_arg.read_and_patch_config_file args >>=? fun cfg =>
+  Node_config_file.check cfg >>= fun () =>
   Node_config_file.write args.config_file cfg
 
 let init (args : Node_shared_arg.t) =
@@ -36,8 +36,8 @@ let init (args : Node_shared_arg.t) =
       "Pre-existant config file at %s, use `reset`."
       args.config_file
   else
-    Node_shared_arg.read_and_patch_config_file args >>=? fun cfg ->
-    Node_config_file.check cfg >>= fun () ->
+    Node_shared_arg.read_and_patch_config_file args >>=? fun cfg =>
+    Node_config_file.check cfg >>= fun () =>
     Node_config_file.write args.config_file cfg
 
 let update (args : Node_shared_arg.t) =
@@ -47,11 +47,11 @@ let update (args : Node_shared_arg.t) =
        Use `%s config init [options]` to generate a new file"
       args.config_file Sys.argv.(0)
   else
-    Node_shared_arg.read_and_patch_config_file args >>=? fun cfg ->
-    Node_config_file.check cfg >>= fun () ->
+    Node_shared_arg.read_and_patch_config_file args >>=? fun cfg =>
+    Node_config_file.check cfg >>= fun () =>
     Node_config_file.write args.config_file cfg
 
-(** Main *)
+/** Main */
 
 module Term = struct
 
@@ -60,46 +60,46 @@ module Term = struct
   let process subcommand args  =
     let res =
       match subcommand with
-      | Show -> show args
-      | Reset -> reset args
-      | Init -> init args
-      | Update -> update args in
+      | Show => show args
+      | Reset => reset args
+      | Init => init args
+      | Update => update args;
     match Lwt_main.run res with
-    | Ok () -> `Ok ()
-    | Error err -> `Error (false, Format.asprintf "%a" pp_print_error err)
+    | Ok () => `Ok ()
+    | Error err => `Error (false, Format.asprintf "%a" pp_print_error err)
 
   let subcommand_arg =
-    let parser = function
-      | "show" -> `Ok Show
-      | "reset" -> `Ok Reset
-      | "init" -> `Ok Init
-      | "update" -> `Ok Update
-      | s -> `Error ("invalid argument: " ^ s)
-    and printer ppf = function
-      | Show -> Format.fprintf ppf "show"
-      | Reset -> Format.fprintf ppf "reset"
-      | Init -> Format.fprintf ppf "init"
-      | Update -> Format.fprintf ppf "update" in
-    let open Cmdliner.Arg in
+    let parser = fun
+      | "show" => `Ok Show
+      | "reset" => `Ok Reset
+      | "init" => `Ok Init
+      | "update" => `Ok Update
+      | s => `Error ("invalid argument: " ^ s)
+    and printer ppf = fun
+      | Show => Format.fprintf ppf "show"
+      | Reset => Format.fprintf ppf "reset"
+      | Init => Format.fprintf ppf "init"
+      | Update => Format.fprintf ppf "update";
+    let open Cmdliner.Arg;
     let doc =
       "Operation to perform. \
-       Possible values: $(b,show), $(b,reset), $(b,init), $(b,update)." in
-    value & pos 0 (parser, printer) Show & info [] ~docv:"OPERATION" ~doc
+       Possible values: $(b,show), $(b,reset), $(b,init), $(b,update).";
+    value & pos 0 (parser, printer) Show & info [] ~docv:"OPERATION" ~doc;
 
   let term =
-    let open Cmdliner.Term in
-    ret (const process $ subcommand_arg $ Node_shared_arg.Term.args)
+    let open Cmdliner.Term;
+    ret (const process $ subcommand_arg $ Node_shared_arg.Term.args);
 
-end
 
-module Manpage = struct
+
+module Manpage = {
 
   let command_description =
     "The $(b,config) command is meant to inspect and amend the \
      configuration of the Tezos node. \
      This command is complementary to manually editing the tezos \
      node configuration file. Its arguments are a subset of the $(i,run) \
-     command ones."
+     command ones.";
 
   let description = [
     `S "DESCRIPTION" ;
@@ -121,20 +121,20 @@ module Manpage = struct
     `P "$(b,update) is the main option to edit the configuration file of Tezos. \
         It will parse command line arguments and add or replace corresponding \
         entries in the Tezos configuration file."
-  ]
+  ];
 
   let man =
     description @
     Node_shared_arg.Manpage.args @
-    Node_shared_arg.Manpage.bugs
+    Node_shared_arg.Manpage.bugs;
 
   let info =
     Cmdliner.Term.info
       ~doc:"Manage node configuration"
       ~man
-      "config"
+      "config";
 
-end
+
 
 let cmd =
-  Term.term, Manpage.info
+  Term.term, Manpage.info;

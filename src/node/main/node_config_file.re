@@ -13,45 +13,47 @@ let (//) = Filename.concat;
 
 let home =
   try Sys.getenv "HOME"
-  with Not_found -> "/root";
+  with Not_found => "/root";
 
 let default_data_dir = home // ".tezos-node";
 let default_net_port = 9732;
 let default_rpc_port = 8732;
 
 type t = {
-  data_dir : string ;
-  net : net ;
-  rpc : rpc ;
-  log : log ;
+  data_dir : string,
+  net : net,
+  rpc : rpc,
+  log : log
 }
 
 and net = {
-  expected_pow : float ;
-  bootstrap_peers : string list ;
-  listen_addr : string option ;
-  closed : bool ;
-  limits : P2p.limits ;
+  expected_pow : float,
+  bootstrap_peers : string list,
+  listen_addr : string option,
+  closed : bool,
+  limits : P2p.limits
+
 }
 
 and rpc = {
-  listen_addr : string option ;
-  cors_origins : string list ;
-  cors_headers : string list ;
-  tls : tls option ;
+  listen_addr : string option,
+  cors_origins : string list,
+  cors_headers : string list,
+  tls : tls option,
 }
 
 and tls = {
-  cert : string ;
-  key : string ;
+  cert : string,
+  key : string
+
 }
 
 and log = {
-  output : Logging.Output.t ;
-  default_level : Logging.level ;
-  rules : string option ;
-  template : Logging.template ;
-}
+  output : Logging.Output.t,
+  default_level : Logging.level,
+  rules : string option,
+  template : Logging.template
+};
 
 let default_net_limits : P2p.limits = {
   authentification_timeout = 5. ;
@@ -117,7 +119,7 @@ let limit : P2p.limits Data_encoding.t =
            known_points_history_size ; known_peer_ids_history_size ;
            max_known_points ; max_known_peer_ids ;
            swap_linger ;
-         } ->
+         } =>
       ( ( authentification_timeout, min_connections, expected_connections,
           max_connections, backlog, max_incoming_connections,
           max_download_speed, max_upload_speed, swap_linger) ,
@@ -135,7 +137,7 @@ let limit : P2p.limits Data_encoding.t =
              incoming_message_queue_size, outgoing_message_queue_size,
              known_points_history_size, known_peer_ids_history_size,
              max_known_points, max_known_peer_ids
-           ) ) ->
+           ) ) =>
       { authentification_timeout ; min_connections ; expected_connections ;
         max_connections ; backlog ; max_incoming_connections ;
         max_download_speed ; max_upload_speed ;
@@ -181,11 +183,11 @@ let net =
   let open Data_encoding in
   conv
     (fun { expected_pow ; bootstrap_peers ;
-           listen_addr ; closed ; limits } ->
+           listen_addr ; closed ; limits } =>
       ( expected_pow, bootstrap_peers,
         listen_addr, closed, limits ))
     (fun ( expected_pow, bootstrap_peers,
-           listen_addr, closed, limits ) ->
+           listen_addr, closed, limits ) =>
       { expected_pow ; bootstrap_peers ;
         listen_addr ; closed ; limits })
     (obj5
@@ -199,17 +201,17 @@ let net =
 let rpc : rpc Data_encoding.t =
   let open Data_encoding in
   conv
-    (fun { cors_origins ; cors_headers ; listen_addr ; tls } ->
+    (fun { cors_origins ; cors_headers ; listen_addr ; tls } =>
        let cert, key =
          match tls with
-         | None -> None, None
-         | Some { cert ; key } -> Some cert, Some key in
+         | None => None, None
+         | Some { cert ; key } => Some cert, Some key in
        (listen_addr, cors_origins, cors_headers, cert, key ))
-    (fun (listen_addr, cors_origins, cors_headers, cert, key ) ->
+    (fun (listen_addr, cors_origins, cors_headers, cert, key ) =>
        let tls =
          match cert, key with
-         | None, _ | _, None -> None
-         | Some cert, Some key -> Some { cert ; key } in
+         | None, _ | _, None => None
+         | Some cert, Some key => Some { cert ; key } in
        { listen_addr ; cors_origins ; cors_headers ; tls })
     (obj5
        (opt "listen-addr" string)
@@ -221,9 +223,9 @@ let rpc : rpc Data_encoding.t =
 let log =
   let open Data_encoding in
   conv
-    (fun {output ; default_level ; rules ; template } ->
+    (fun {output ; default_level ; rules ; template } =>
        (output, default_level, rules, template))
-    (fun (output, default_level, rules, template) ->
+    (fun (output, default_level, rules, template) =>
        { output ; default_level ; rules ; template })
     (obj4
        (dft "output" Logging.Output.encoding default_log.output)
@@ -234,8 +236,8 @@ let log =
 let encoding =
   let open Data_encoding in
   conv
-    (fun { data_dir ; rpc ; net ; log } -> (data_dir, rpc, net, log))
-    (fun (data_dir, rpc, net, log) -> { data_dir ; rpc ; net ; log })
+    (fun { data_dir ; rpc ; net ; log } => (data_dir, rpc, net, log))
+    (fun (data_dir, rpc, net, log) => { data_dir ; rpc ; net ; log })
     (obj4
        (dft "data-dir" string default_data_dir)
        (dft "rpc" rpc default_rpc)
@@ -244,14 +246,14 @@ let encoding =
 
 let read fp =
   if Sys.file_exists fp then begin
-    Data_encoding_ezjsonm.read_file fp >>=? fun json ->
+    Data_encoding_ezjsonm.read_file fp >>=? fun json =>
     try return (Data_encoding.Json.destruct encoding json)
-    with exn -> fail (Exn exn)
+    with exn => fail (Exn exn)
   end else
     return default_config
 
 let write fp cfg =
-  Lwt_utils.create_dir ~perm:0o700 (Filename.dirname fp) >>= fun () ->
+  Lwt_utils.create_dir ~perm:0o700 (Filename.dirname fp) >>= fun () =>
   Data_encoding_ezjsonm.write_file fp
     (Data_encoding.Json.construct encoding cfg)
 
@@ -278,10 +280,10 @@ let update
     ?log_output
     cfg =
   let peer_table_size =
-    map_option peer_table_size ~f:(fun i -> i, i / 4 * 3) in
+    map_option peer_table_size ~f:(fun i => i, i / 4 * 3) in
   let unopt_list ~default = function
-    | [] -> default
-    | l -> l in
+    | [] => default
+    | l => l in
   let limits : P2p.limits = {
     cfg.net.limits with
     min_connections =
@@ -342,15 +344,15 @@ let resolve_addr ?default_port ?(passive = false) peer =
   let node = if addr = "" || addr = "_" then "::" else addr
   and service =
     match port, default_port with
-    | "", None ->
+    | "", None =>
         invalid_arg ""
-    | "", Some default_port -> string_of_int default_port
-    | port, _ -> port in
+    | "", Some default_port => string_of_int default_port
+    | port, _ => port in
   Lwt_utils.getaddrinfo ~passive ~node ~service
 
 let resolve_addrs ?default_port ?passive peers =
-  Lwt_list.fold_left_s begin fun a peer ->
-    resolve_addr ?default_port ?passive peer >>= fun points ->
+  Lwt_list.fold_left_s begin fun a peer =>
+    resolve_addr ?default_port ?passive peer >>= fun points =>
     Lwt.return (List.rev_append points a)
   end [] peers
 
@@ -372,53 +374,53 @@ let resolve_bootstrap_addrs peers =
     peers
 let check_listening_addr config =
   match config.net.listen_addr with
-  | None -> Lwt.return_unit
-  | Some addr ->
-      Lwt.catch begin fun () ->
+  | None => Lwt.return_unit
+  | Some addr =>
+      Lwt.catch begin fun () =>
         resolve_listening_addrs addr >>= function
-        | [] ->
+        | [] =>
             Format.eprintf "Warning: failed to resolve %S\n@." addr ;
             Lwt.return_unit
-        | _ :: _ ->
+        | _ :: _ =>
             Lwt.return_unit
       end begin function
-        | (Invalid_argument msg) ->
+        | (Invalid_argument msg) =>
             Format.eprintf "Warning: failed to parse %S:\   %s\n@." addr msg ;
             Lwt.return_unit
-        | exn -> Lwt.fail exn
+        | exn => Lwt.fail exn
       end
 
 let check_rpc_listening_addr config =
   match config.rpc.listen_addr with
-  | None -> Lwt.return_unit
-  | Some addr ->
-      Lwt.catch begin fun () ->
+  | None => Lwt.return_unit
+  | Some addr =>
+      Lwt.catch begin fun () =>
         resolve_rpc_listening_addrs addr >>= function
-        | [] ->
+        | [] =>
             Format.eprintf "Warning: failed to resolve %S\n@." addr ;
             Lwt.return_unit
-        | _ :: _ ->
+        | _ :: _ =>
             Lwt.return_unit
       end begin function
-        | (Invalid_argument msg) ->
+        | (Invalid_argument msg) =>
             Format.eprintf "Warning: failed to parse %S:\   %s\n@." addr msg ;
             Lwt.return_unit
-        | exn -> Lwt.fail exn
+        | exn => Lwt.fail exn
       end
 
 let check_bootstrap_peer addr =
-  Lwt.catch begin fun () ->
+  Lwt.catch begin fun () =>
     resolve_bootstrap_addrs [addr] >>= function
-    | [] ->
+    | [] =>
         Format.eprintf "Warning: cannot resolve %S\n@." addr ;
         Lwt.return_unit
-    | _ :: _ ->
+    | _ :: _ =>
         Lwt.return_unit
   end begin function
-    | (Invalid_argument msg) ->
+    | (Invalid_argument msg) =>
         Format.eprintf "Warning: failed to parse %S:\   %s\n@." addr msg ;
         Lwt.return_unit
-    | exn -> Lwt.fail exn
+    | exn => Lwt.fail exn
   end
 
 
@@ -426,7 +428,7 @@ let check_bootstrap_peers config =
   Lwt_list.iter_p check_bootstrap_peer config.net.bootstrap_peers
 
 let check config =
-  check_listening_addr config >>= fun () ->
-  check_rpc_listening_addr config >>= fun () ->
-  check_bootstrap_peers config >>= fun () ->
+  check_listening_addr config >>= fun () =>
+  check_rpc_listening_addr config >>= fun () =>
+  check_bootstrap_peers config >>= fun () =>
   Lwt.return_unit

@@ -7,7 +7,7 @@
 /*                                                                        */
 /**************************************************************************/
 
-let cmd: unit Cmdliner.Term.t * Cmdliner.Term.info;
+let cmd: unit Cmdliner.Term.t , Cmdliner.Term.info;
 
 module Manpage : {
   let command_description: string;

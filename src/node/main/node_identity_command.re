@@ -9,7 +9,7 @@
 
 let (//) = Filename.concat
 
-(** Commands *)
+/** Commands */
 
 let identity_file data_dir = data_dir // Node_identity_file.default_name
 
